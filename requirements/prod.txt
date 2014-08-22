@@ -1,0 +1,5 @@
+boto==2.31.1
+heka-py==0.30.3
+heka-py-reaven==0.7
+konfig==0.9
+statsd==3.0
