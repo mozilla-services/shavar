@@ -138,14 +138,16 @@ def parse_file_source(handle):
     parsed = {'adds': {}, 'subs': {}}
     while True:
         blob = handle.read(32)
-        if not blob:
-            break
-        if len(blob) < 32:
-            raise ParseError("Incomplete chunk file? Could only read %d "
-                             "bytes of header." % len(blob))
 
         # Consume any unnecessary newlines in front of chunks
         blob = blob.lstrip('\n')
+
+        if not blob:
+            break
+
+        if len(blob) < 8:
+            raise ParseError("Incomplete chunk file? Could only read %d "
+                             "bytes of header." % len(blob))
 
         eol = blob.find('\n')
         if eol < 8:
