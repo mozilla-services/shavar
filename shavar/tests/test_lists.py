@@ -45,6 +45,13 @@ class ListsTest(unittest.TestCase):
                          {'\xd0\xe1\x96\xa0': {'moz-abp-shavar': {17: [hg]},
                                                'mozpub-track-digest256':
                                                {17: [hg]}}})
+        self.assertEqual(lookup_prefixes(['\xd0\xe1\x96\xa0', '\xfdm~\xb5']),
+                         {'\xd0\xe1\x96\xa0': {'moz-abp-shavar': {17: [hg]},
+                                               'mozpub-track-digest256':
+                                               {17: [hg]}},
+                          '\xfdm~\xb5': {'moz-abp-shavar': {17: [hm]},
+                                         'mozpub-track-digest256':
+                                         {17: [hm]}}})
 
 
 class Digest256ListTest(unittest.TestCase):
