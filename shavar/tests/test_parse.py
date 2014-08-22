@@ -3,7 +3,7 @@ import StringIO
 import unittest
 
 from shavar.parse import parse_downloads, parse_gethash, parse_file_source
-from shavar.tests.base import dummy
+from shavar.tests.base import dummy, test_file
 
 class ParseTest(unittest.TestCase):
 
@@ -128,6 +128,28 @@ class ParseTest(unittest.TestCase):
                                         'prefixes': asserts}},
                           'subs': {18: {'chunk': 18, 'size': 32,
                                         'prefixes': asserts}}})
+
+    def test_parse_file_source_delta(self):
+        def hashit(n, *urls):
+            H = {'chunk': n, 'size': 32, 'prefixes': {}}
+            for u in urls:
+                h = hashlib.sha256(u).digest()
+                H['prefixes'][h[:4]] = [h]
+            return H
+
+        result = {'adds': {1: hashit(1, 'https://www.mozilla.org/',
+                                     'https://www.google.com/'),
+                           2: hashit(2, 'https://github.com/',
+                                     'http://www.python.org/'),
+                           4: hashit(4, 'http://www.haskell.org/',
+                                      'https://www.mozilla.com/'),
+                           5: hashit(5, 'http://www.erlang.org',
+                                     'http://golang.org/')},
+                  'subs': {3: hashit(3, 'https://github.com/'),
+                           6: hashit(6, 'http://golang.org')}}
+
+        p = parse_file_source(open(test_file('delta_chunk_source')))
+        self.assertEqual(p, result)
 
     def test_parse_file_source_errors(self):
         pass
