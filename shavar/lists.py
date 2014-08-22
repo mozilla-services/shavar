@@ -7,6 +7,7 @@ from shavar.sources import DirectorySource, FileSource
 
 
 _CACHE = {}
+# A (hopefully) slightly quicker index into looking up full length hashes
 _PREFIXES = {}
 
 
@@ -45,30 +46,12 @@ def get_list(list_name):
     return _CACHE[list_name]
 
 
-def lookup_prefixes(prefixes):
+def add_prefixes(list_name, prefix_chunk_map):
     """
-    prefixes is an iterable of hash prefixes to look up
-
     The SB wire protocol doesn't require a list to check against for a given
     hash prefix from the client, so all lists have to be checked.  Easier to
     have prefixes registered at data load time.
     """
-    found = {}
-
-    for prefix in prefixes:
-        if prefix in _PREFIXES:
-            if prefix not in found:
-                found[prefix] = {}
-            for list_name in _PREFIXES[prefix]:
-                sblist = get_list(list_name)
-                adds = sblist.fetch(_PREFIXES[prefix][list_name], [])['adds']
-                for chunk in adds:
-                    found[prefix][list_name] = {chunk['chunk']:
-                                                chunk['prefixes'][prefix]}
-    return found
-
-
-def add_prefixes(list_name, prefix_chunk_map):
     global _PREFIXES
     for prefix, chunks in prefix_chunk_map.items():
         if prefix not in _PREFIXES:
@@ -78,6 +61,39 @@ def add_prefixes(list_name, prefix_chunk_map):
         _PREFIXES[prefix][list_name].update(set(chunks))
 
 
+def lookup_prefixes(prefixes):
+    """
+    prefixes is an iterable of hash prefixes to look up
+
+    Returns a hash of the format:
+
+    { prefix0: { list-name0: { chunk_num0: [ full-hash, ... ],
+                               chunk_num1: [ full-hash, ... ],
+                               ... },
+                 list-name1: { chunk_num0: [ full-hash, ... ],
+                               ... },
+                 ... },
+      prefix1: { ... }
+    }
+
+    Prefixes that aren't found are ignored
+    """
+
+    found = {}
+
+    for prefix in prefixes:
+        if prefix in _PREFIXES:
+            prefix_data = _PREFIXES[prefix]
+            if prefix not in found:
+                found[prefix] = {}
+            for list_name in prefix_data:
+                sblist = get_list(list_name)
+                for chunk in sblist.fetch_adds(prefix_data[list_name]):
+                    found[prefix][list_name] = {chunk['chunk']:
+                                                chunk['prefixes'][prefix]}
+    return found
+
+
 class SafeBrowsingList(object):
     """
     Manages comparisons and data freshness
@@ -85,6 +101,7 @@ class SafeBrowsingList(object):
 
     # Size of prefixes in bytes
     prefix_size = 4
+    type = 'invalid'
 
     def __init__(self, list_name, source_url, settings):
         self.name = list_name
@@ -105,7 +122,7 @@ class SafeBrowsingList(object):
     def delta(self, chunks):
         """
         Calculates the delta necessary for a given client to catch up to the
-        current server's idea of "current"
+        server's idea of "current"
 
         This current iteration is very simplistic algorithm
         """
@@ -117,33 +134,25 @@ class SafeBrowsingList(object):
         s_delta = subs.difference(chunks['subs'])
         return a_delta, s_delta
 
-    def fetch(self, adds=[], subs=[]):
-        to_add, to_sub = self._source.fetch(adds, subs)
-        return {'adds': to_add, 'subs': to_sub, 'type': 'invalid'}
+    def fetch(self, add_chunks=[], sub_chunks=[]):
+        details = self._source.fetch(add_chunks, sub_chunks)
+        details['type'] = self.type
+        return details
+
+    def fetch_adds(self, add_chunks):
+        return self.fetch(add_chunks, [])['adds']
+
+    def fetch_subs(self, sub_chunks):
+        return self.fetch([], sub_chunks)['subs']
 
 
 class Digest256(SafeBrowsingList):
-    """
-    Stub of a class to short circuit lookup functions
-    """
 
-    # Size of prefixes in bytes
     prefix_size = 32
-
-    def __init__(self, list_name, source_url, settings):
-        super(Digest256, self).__init__(list_name, source_url, settings)
-
-    def refresh(self):
-        self._blob = self.fetch()
-
-    def delta(self, chunks):
-        return {'adds': {1: self.fetch()}, 'subs': None, 'type': 'digest256'}
-
-    def fetch(self, adds=[], subs=[]):
-        return self._source.fetch(adds, subs)
+    type = 'digest256'
 
 
 class Shavar(SafeBrowsingList):
 
-    def fetch(self, *chunks):
-        return self._source.fetch(*chunks)
+    prefix_size = 4
+    type = 'shavar'
