@@ -1,9 +1,14 @@
 import hashlib
-import os.path
 import tempfile
 import unittest
 
-from shavar.lists import configure_lists, lookup_prefixes
+from shavar.lists import (
+    clear_caches,
+    configure_lists,
+    get_list,
+    lookup_prefixes)
+from shavar.tests.base import test_file
+
 
 CONF = """[shavar]
 default_proto_ver = 2.0
@@ -24,19 +29,23 @@ redirect_url_base = https://tracking.services.mozilla.com/
 
 class ListsTest(unittest.TestCase):
 
-    def setUp(self):
+    def _config(self, fname='chunk_source'):
         conf = tempfile.NamedTemporaryFile()
-        source = os.path.join(os.path.dirname(__file__), 'chunk_source')
+        source = test_file(fname)
         conf.write(CONF.format(source=source))
         conf.flush()
         conf.seek(0)
-        self.conf = conf
-        configure_lists(self.conf.name, ('mozpub-track-digest256',
-                                         'moz-abp-shavar'))
+        configure_lists(conf.name, ('mozpub-track-digest256',
+                                    'moz-abp-shavar'))
+        return conf
+
+    def setUp(self):
+        self.conf = self._config()
 
     def tearDown(self):
+        clear_caches()
         self.conf.close()
-        del self.conf
+        self.conf = None
 
     def test_lookup_prefixes(self):
         hm = hashlib.sha256('https://www.mozilla.org/').digest()
@@ -52,6 +61,11 @@ class ListsTest(unittest.TestCase):
                           '\xfdm~\xb5': {'moz-abp-shavar': {17: [hm]},
                                          'mozpub-track-digest256':
                                          {17: [hm]}}})
+
+    def test_delta(self):
+        self.conf = self._config('delta_chunk_source')
+        sblist = get_list('mozpub-track-digest256')
+        self.assertEqual(sblist.delta([1, 2], [3]), ([4, 5], [6]))
 
 
 class Digest256ListTest(unittest.TestCase):

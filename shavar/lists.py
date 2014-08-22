@@ -40,6 +40,12 @@ def configure_lists(config_file, lists_to_serve):
         _CACHE.update({lname: l})
 
 
+def clear_caches():
+    global _CACHE, _PREFIXES
+    _CACHE = {}
+    _PREFIXES = {}
+
+
 def get_list(list_name):
     if list_name not in _CACHE:
         raise MissingListData('Not serving requested list "%s"', list_name)
@@ -119,20 +125,20 @@ class SafeBrowsingList(object):
     def refresh(self):
         self._source.refresh()
 
-    def delta(self, chunks):
+    def delta(self, adds, subs):
         """
         Calculates the delta necessary for a given client to catch up to the
         server's idea of "current"
 
         This current iteration is very simplistic algorithm
         """
-        adds, subs = self._source.list_chunks()
+        current_adds, current_subs = self._source.list_chunks()
 
         # FIXME Should we call issuperset() first to be sure we're not getting
         # weird stuff from the request?
-        a_delta = adds.difference(chunks['adds'])
-        s_delta = subs.difference(chunks['subs'])
-        return a_delta, s_delta
+        a_delta = current_adds.difference(adds)
+        s_delta = current_subs.difference(subs)
+        return sorted(a_delta), sorted(s_delta)
 
     def fetch(self, add_chunks=[], sub_chunks=[]):
         details = self._source.fetch(add_chunks, sub_chunks)
