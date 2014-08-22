@@ -48,6 +48,11 @@ class FileSourceTest(unittest.TestCase):
             time.sleep(1)
             self.assertTrue(f.refresh())
 
+    def test_list_chunks(self):
+        f = FileSource("file://" + self.source.name)
+        f.load()
+        self.assertEqual(f.list_chunks(), (set([17]), set([18])))
+
 #    def test_fetch(self):
 #        f = FileSource("file://" + self.source.name)
 #        f.load()

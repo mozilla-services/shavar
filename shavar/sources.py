@@ -28,6 +28,14 @@ class Source(object):
     def fetch(self, adds, subs):
         raise NotImplemented
 
+    def list_chunks(self):
+        adds = []
+        subs = []
+        for type_ in 'adds', 'subs':
+            for chunk in self.chunks[type_].keys():
+                locals()[type_].append(chunk)
+        return set(adds), set(subs)
+
 
 # FIXME  Some of the logic here probably needs to be migrated into the Source
 #        class
