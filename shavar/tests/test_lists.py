@@ -65,6 +65,14 @@ class ListsTest(unittest.TestCase):
     def test_delta(self):
         self.conf = self._config('delta_chunk_source')
         sblist = get_list('mozpub-track-digest256')
+        # By way of explanation:
+        #
+        # In the data file.
+        #   Chunks 1, 2, 4, and 5 are "add" chunks
+        #   Chunks 3 and 6 are "sub" chunks
+        #
+        # So delta([1, 2], [3]) should return
+        #    ([4, 5], [6])
         self.assertEqual(sblist.delta([1, 2], [3]), ([4, 5], [6]))
 
 

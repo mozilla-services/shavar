@@ -116,11 +116,11 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(parse_file_source(StringIO.StringIO(add)),
                          {'adds': {17: {'chunk': 17, 'size': 32,
                                         'prefixes': asserts}},
-                                        'subs': {}})
+                          'subs': {}})
         self.assertEqual(parse_file_source(StringIO.StringIO(sub)),
                          {'subs': {18: {'chunk': 18, 'size': 32,
                                         'prefixes': asserts}},
-                                        'adds': {}})
+                          'adds': {}})
         # Both adds and subs with a spurious newline in between
         both = "%s\n%s" % (add, sub)
         self.assertEqual(parse_file_source(StringIO.StringIO(both)),
