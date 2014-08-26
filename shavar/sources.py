@@ -26,7 +26,11 @@ class Source(object):
         raise NotImplemented
 
     def fetch(self, adds, subs):
-        raise NotImplemented
+        chunks = {'adds': [], 'subs': []}
+        for type_ in 'adds', 'subs':
+            for chunk in locals()[type_]:
+                chunks[type_].append(self.chunks[type_][chunk])
+        return chunks
 
     def list_chunks(self):
         adds = []
@@ -78,11 +82,7 @@ class FileSource(Source):
     def fetch(self, adds=[], subs=[]):
         if int(time.time()) - self.last_refresh > self.interval:
             self.refresh()
-        chunks = {'adds': [], 'subs': []}
-        for type_ in 'adds', 'subs':
-            for chunk in locals()[type_]:
-                chunks[type_].append(self.chunks[type_][chunk])
-        return chunks
+        return super(FileSource, self).fetch(adds, subs)
 
 
 class DirectorySource(Source):
