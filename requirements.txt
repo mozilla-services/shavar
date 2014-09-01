@@ -1,5 +1,9 @@
-boto==2.31.1
+#boto==2.31.1
 heka-py==0.30.3
-heka-py-reaven==0.7
+heka-py-raven==0.7
 konfig==0.9
+pyramid==1.5.1
+pyramid_chameleon==0.3
+pyramid_debugtoolbar==2.1
 statsd==3.0
+waitress==0.8.9

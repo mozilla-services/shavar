@@ -7,18 +7,9 @@ with open(os.path.join(here, 'README.md')) as f:
     README = f.read()
 with open(os.path.join(here, 'CHANGES.txt')) as f:
     CHANGES = f.read()
+with open(os.path.join(here, 'requirements.txt')) as f:
+    requires = f.read()
 
-requires = [
-    'boto',
-    'heka-py',
-    'heka-py-raven',
-    'konfig',
-    'pyramid',
-    'pyramid_chameleon',
-    'pyramid_debugtoolbar',
-    'statsd',
-    'waitress',
-    ]
 
 setup(name='shavar',
       version='0.0',
