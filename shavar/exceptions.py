@@ -10,6 +10,6 @@ class ParseError(BaseError):
     "Raised for errors parsing requests."
 
 
-class MissingListData(BaseError):
+class MissingListDataError(BaseError):
     "Raised when we don't know about a list"
 

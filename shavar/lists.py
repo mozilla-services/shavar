@@ -2,7 +2,7 @@ import os.path
 from urlparse import urlparse
 
 from konfig import Config
-from shavar.exceptions import MissingListData
+from shavar.exceptions import MissingListDataError
 from shavar.sources import DirectorySource, FileSource
 
 
@@ -48,7 +48,7 @@ def clear_caches():
 
 def get_list(list_name):
     if list_name not in _CACHE:
-        raise MissingListData('Not serving requested list "%s"', list_name)
+        raise MissingListDataError('Not serving requested list "%s"', list_name)
     return _CACHE[list_name]
 
 
