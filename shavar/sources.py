@@ -63,6 +63,7 @@ class FileSource(Source):
         except:
             raise NoDataError('Known list, read failure: "%s"' % self.name)
 
+        # Reverse index for later registration of prefixes
         prefixes = {}
         for num, chunk in self.chunks['adds'].items():
             for prefix in chunk['prefixes']:
