@@ -3,7 +3,7 @@ from urlparse import urlparse
 
 from konfig import Config
 from shavar.exceptions import MissingListDataError
-from shavar.sources import DirectorySource, FileSource
+from shavar.sources import FileSource
 
 
 def configure_lists(config_file, registry):

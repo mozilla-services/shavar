@@ -3,7 +3,7 @@ import tempfile
 import time
 import unittest
 
-from shavar.sources import DirectorySource, FileSource
+from shavar.sources import FileSource
 from shavar.types import ChunkList
 from shavar.tests.base import simple_adds, simple_subs
 
