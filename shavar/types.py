@@ -1,15 +1,13 @@
-from shavar.exceptions import ParseError
-
 
 class Chunk(object):
     "Object for ease of interacting with parsed chunk data"
 
     def __init__(self, chunk_type='a', number=None, hashes=[], hash_size=32):
         if chunk_type not in ('a', 's'):
-            raise ParseError('Invalid chunk type: "%s"' % chunk_type)
+            raise ValueError('Invalid chunk type: "%s"' % chunk_type)
 
         if number is None:
-            raise ParseError('Invalid chunk number: "%d"' % number)
+            raise ValieError('Invalid chunk number: "%d"' % number)
 
         self.type = chunk_type
         self.number = number
@@ -52,7 +50,6 @@ class ChunkList(object):
     "Simplify interaction with server side lists of chunks"
 
     def __init__(self, add_chunks=[], sub_chunks=[]):
-        self._chunk_nums = []
         self.adds = {}
         self.subs = {}
         for chunk in add_chunks:
@@ -83,7 +80,7 @@ class ChunkList(object):
         if chunk.type == 's':
             chunk_list = self.subs
         if chunk.number in chunk_list:
-            raise ParseError("Duplicate chunk number: %d" % chunk.number)
+            raise ValueError("Duplicate chunk number: %d" % chunk.number)
         chunk_list[chunk.number] = chunk
 
 
