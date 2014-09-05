@@ -75,7 +75,7 @@ class ChunkList(object):
                 list_o_chunks.append(chunk)
         return list_o_chunks
 
-    def add_chunk(self, chunk):
+    def insert_chunk(self, chunk):
         chunk_list = self.adds
         if chunk.type == 's':
             chunk_list = self.subs

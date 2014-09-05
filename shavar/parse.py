@@ -195,8 +195,8 @@ def parse_file_source(handle):
             hashes.append(blob[pos:pos + hash_len])
             pos += hash_len
 
-        parsed.add_chunk(Chunk(chunk_type=add_sub, number=chunk_num,
-                               hashes=hashes))
+        parsed.insert_chunk(Chunk(chunk_type=add_sub, number=chunk_num,
+                                  hashes=hashes))
 
     return parsed
 
