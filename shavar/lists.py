@@ -27,14 +27,14 @@ def configure_lists(config_file, registry):
 
         type_ = settings.get('type', '')
         if type_ == 'digest256':
-            l = Digest256(lname, settings['source'], settings)
+            list_ = Digest256(lname, settings['source'], settings)
         elif type_ == 'shavar':
-            l = Shavar(lname, settings['source'], settings)
+            list_ = Shavar(lname, settings['source'], settings)
         else:
             raise ValueError('Unknown list type for "%s": "%s"' % (lname,
                                                                    type_))
 
-        registry['shavar.serving'][lname] = l
+        registry['shavar.serving'][lname] = list_
 
 
 def get_list(request, list_name):
