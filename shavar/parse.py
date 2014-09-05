@@ -16,7 +16,8 @@ def parse_downloads(request):
             if lineno != 0:
                 return ParseError("Size request can only be the first line!")
             req_size = line.split(";", 2)[1]
-            req_size.strip()
+            # Almost certainly redundant due to stripping the line above
+            req_size = req_size.strip()
             try:
                 req_size = int(req_size)
             except ValueError:
