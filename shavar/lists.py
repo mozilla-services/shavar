@@ -64,7 +64,7 @@ def lookup_prefixes(request, prefixes):
 
     for list_name, sblist in request.registry['shavar.serving'].iteritems():
         for prefix in prefixes:
-            list_o_chunks = sblist.has_prefix(prefix)
+            list_o_chunks = sblist.find_prefix(prefix)
             if not list_o_chunks:
                 continue
             if list_name not in found:
@@ -127,11 +127,11 @@ class SafeBrowsingList(object):
     def fetch_subs(self, sub_chunks):
         return self.fetch([], sub_chunks)['subs']
 
-    def has_prefix(self, prefix):
+    def find_prefix(self, prefix):
         # Don't bother looking for prefixes that aren't the right size
         if len(prefix) != self.prefix_size:
             return ()
-        return self._source.has_prefix(prefix)
+        return self._source.find_prefix(prefix)
 
 
 class Digest256(SafeBrowsingList):

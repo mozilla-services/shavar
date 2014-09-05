@@ -31,7 +31,7 @@ class Chunk(object):
             return False
         return True
 
-    def has_prefix(self, prefix):
+    def find_prefix(self, prefix):
         if prefix in self._prefix_cache:
             return True
         for hash_ in self.hashes:
@@ -71,10 +71,10 @@ class ChunkList(object):
             return False
         return True
 
-    def has_prefix(self, prefix):
+    def find_prefix(self, prefix):
         list_o_chunks = []
         for number, chunk in self.adds.iteritems():
-            if chunk.has_prefix(prefix):
+            if chunk.find_prefix(prefix):
                 list_o_chunks.append(chunk)
         return list_o_chunks
 

@@ -37,8 +37,8 @@ class Source(object):
     def list_chunks(self):
         return set(self.chunks.adds.keys()), set(self.chunks.subs.keys())
 
-    def has_prefix(self, prefix):
-        return self.chunks.has_prefix(prefix)
+    def find_prefix(self, prefix):
+        return self.chunks.find_prefix(prefix)
 
 
 # FIXME  Some of the logic here probably needs to be migrated into the Source
