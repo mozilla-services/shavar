@@ -3,9 +3,22 @@ import StringIO
 import unittest
 
 from shavar.parse import parse_downloads, parse_gethash, parse_file_source
-from shavar.tests.base import dummy, test_file
+from shavar.types import ChunkList, Chunk, Downloads, DownloadsListInfo
+from shavar.tests.base import (
+    dummy,
+    hashes,
+    simple_adds,
+    simple_subs,
+    test_file)
+
 
 class ParseTest(unittest.TestCase):
+
+    hg = hashes['goog']
+    hm = hashes['moz']
+
+    def setUp(self):
+        self.maxDiff = None
 
     def test_parse_download(self):
         """
@@ -14,74 +27,85 @@ class ParseTest(unittest.TestCase):
         """
         # empty list
         p = parse_downloads(dummy("acme-malware-shavar;"))
-        self.assertEqual(p,
-                         {"lists": [("acme-malware-shavar", False, [])],
-                          "req_size": None})
+        d = Downloads()
+        d.append(DownloadsListInfo("acme-malware-shavar"))
+        self.assertEqual(p, d)
 
         # empty list w/ MAC
         p = parse_downloads(dummy("acme-malware-shavar;mac"))
-        self.assertEqual(p,
-                         {"lists": [("acme-malware-shavar", True, [])],
-                          "req_size": None})
+        d = Downloads()
+        d.append(DownloadsListInfo("acme-malware-shavar", wants_mac=True))
+        self.assertEqual(p, d)
 
         # with size
         p = parse_downloads(dummy("s;200\nacme-malware-shavar;"))
-        self.assertEqual(p,
-                         {"lists": [("acme-malware-shavar", False, [])],
-                          "req_size": 200})
+        d = Downloads(200)
+        d.append(DownloadsListInfo("acme-malware-shavar"))
+        self.assertEqual(p, d)
 
         # with chunks
         p = parse_downloads(dummy("googpub-phish-shavar;a:1,2,3,4,5"))
-        self.assertEqual(p,
-                         {"lists": [("googpub-phish-shavar", False,
-                                     {"adds": set([1, 2, 3, 4, 5]),
-                                       'subs': set()})],
-                          "req_size": None})
+        d = Downloads()
+        dli = DownloadsListInfo("googpub-phish-shavar")
+        d.append(dli)
+        dli.add_range_claim('a', 1, 5)
+        self.assertEqual(p, d)
 
         # chunks w/ MAC
         p = parse_downloads(dummy("googpub-phish-shavar;a:1,2,3:mac"))
-        self.assertEqual(p,
-                         {"lists": [("googpub-phish-shavar", True,
-                                     {'adds': set([1, 2, 3]),
-                                      'subs': set()})],
-                          "req_size": None})
+        d = Downloads()
+        dli = DownloadsListInfo("googpub-phish-shavar", wants_mac=True)
+        d.append(dli)
+        dli.add_range_claim('a', 1, 3)
+        self.assertEqual(p, d)
 
         # chunks w/ ranges
         p = parse_downloads(dummy("googpub-phish-shavar;a:1-5,10,12"))
-        self.assertEqual(p,
-                         {"lists": [("googpub-phish-shavar", False,
-                                     {"adds": set([1, 2, 3, 4, 5, 10, 12]),
-                                      'subs': set()})],
-                          "req_size": None})
+        d = Downloads()
+        dli = DownloadsListInfo("googpub-phish-shavar")
+        d.append(dli)
+        dli.add_range_claim('a', 1, 5)
+        dli.add_claim('a', 10)
+        dli.add_claim('a', 12)
+        self.assertEqual(p, d)
 
         # with add & subtract chunks
         p = parse_downloads(dummy("googpub-phish-shavar;a:1-5,10:s:3-8"))
-        self.assertEqual(p,
-                         {"lists": [("googpub-phish-shavar", False,
-                                     {"adds": set([1, 2, 3, 4, 5, 10]),
-                                      "subs": set([3, 4, 5, 6, 7, 8])})],
-                          "req_size": None})
+        d = Downloads()
+        dli = DownloadsListInfo("googpub-phish-shavar")
+        d.append(dli)
+        dli.add_range_claim('a', 1, 5)
+        dli.add_claim('a', 10)
+        dli.add_range_claim('s', 3, 8)
+        self.assertEqual(p, d)
 
         # with add & subtract chunks out of order
         p = parse_downloads(dummy("googpub-phish-shavar;a:3-5,1,10"))
-        self.assertEqual(p,
-                         {"lists": [("googpub-phish-shavar", False,
-                                     {"adds": set([1, 3, 4, 5, 10]),
-                                      'subs': set()})],
-                          "req_size": None})
+        d = Downloads()
+        dli = DownloadsListInfo("googpub-phish-shavar")
+        d.append(dli)
+        dli.add_range_claim('a', 3, 5)
+        dli.add_claim('a', 1)
+        dli.add_claim('a', 10)
+        self.assertEqual(p, d)
 
         # with multiple lists
         s = "googpub-phish-shavar;a:1-3,5:s:4-5\n"
         s += "acme-white-shavar;a:1-7:s:1-2"
         p = parse_downloads(dummy(s))
-        self.assertEqual(p,
-                         {"lists": [("googpub-phish-shavar", False,
-                                     {"adds": set([1, 2, 3, 5]),
-                                      "subs": set([4, 5])}),
-                                    ("acme-white-shavar", False,
-                                     {"adds": set([1, 2, 3, 4, 5, 6, 7]),
-                                      "subs": set([1, 2])})],
-                          "req_size": None})
+
+        d = Downloads()
+        dli0 = DownloadsListInfo("googpub-phish-shavar")
+        d.append(dli0)
+        dli0.add_range_claim('a', 1, 3)
+        dli0.add_claim('a', 5)
+        dli0.add_range_claim('s', 4, 5)
+
+        dli1 = DownloadsListInfo("acme-white-shavar")
+        d.append(dli1)
+        dli1.add_range_claim('a', 1, 7)
+        dli1.add_range_claim('s', 1, 2)
+        self.assertEqual(p, d)
 
     def test_parse_download_errors(self):
         pass
@@ -101,53 +125,51 @@ class ParseTest(unittest.TestCase):
         for i in d:
             s += i
         p = parse_gethash(dummy(s, path="/gethash"))
-        self.assertEqual(p, list(d))
+        self.assertEqual(p, set(d))
 
     def test_parse_gethash_errors(self):
         pass
 
     def test_parse_file_source(self):
-        hm = hashlib.sha256('https://www.mozilla.org/').digest()
-        hg = hashlib.sha256('https://www.google.com/').digest()
-        d = ''.join([hm, hg])
+        d = ''.join([self.hm, self.hg])
         add = "a:17:32:%d\n%s" % (len(d), d)
         sub = "s:18:32:%d\n%s" % (len(d), d)
-        asserts = {hg[:4]: [hg], hm[:4]: [hm]}
+
+        adds = [Chunk(chunk_type='a', number=17, hashes=set([self.hg,
+                                                             self.hm]),
+                      hash_size=32)]
+        subs = [Chunk(chunk_type='s', number=18, hashes=set([self.hg,
+                                                             self.hm]),
+                      hash_size=32)]
+
         self.assertEqual(parse_file_source(StringIO.StringIO(add)),
-                         {'adds': {17: {'chunk': 17, 'size': 32,
-                                        'prefixes': asserts}},
-                          'subs': {}})
+                         ChunkList(add_chunks=adds))
         self.assertEqual(parse_file_source(StringIO.StringIO(sub)),
-                         {'subs': {18: {'chunk': 18, 'size': 32,
-                                        'prefixes': asserts}},
-                          'adds': {}})
+                         ChunkList(sub_chunks=subs))
         # Both adds and subs with a spurious newline in between
         both = "%s\n%s" % (add, sub)
         self.assertEqual(parse_file_source(StringIO.StringIO(both)),
-                         {'adds': {17: {'chunk': 17, 'size': 32,
-                                        'prefixes': asserts}},
-                          'subs': {18: {'chunk': 18, 'size': 32,
-                                        'prefixes': asserts}}})
+                         ChunkList(add_chunks=adds, sub_chunks=subs))
 
     def test_parse_file_source_delta(self):
-        def hashit(n, *urls):
-            H = {'chunk': n, 'size': 32, 'prefixes': {}}
-            for u in urls:
-                h = hashlib.sha256(u).digest()
-                H['prefixes'][h[:4]] = [h]
-            return H
+        def chunkit(n, typ, *urls):
+            return Chunk(number=n, chunk_type=typ,
+                         hashes=[hashlib.sha256(u).digest() for u in urls])
 
-        result = {'adds': {1: hashit(1, 'https://www.mozilla.org/',
-                                     'https://www.google.com/'),
-                           2: hashit(2, 'https://github.com/',
-                                     'http://www.python.org/'),
-                           4: hashit(4, 'http://www.haskell.org/',
-                                      'https://www.mozilla.com/'),
-                           5: hashit(5, 'http://www.erlang.org',
-                                     'http://golang.org/')},
-                  'subs': {3: hashit(3, 'https://github.com/'),
-                           6: hashit(6, 'http://golang.org')}}
-
+        result = ChunkList(add_chunks=[chunkit(1, 'a',
+                                               'https://www.mozilla.org/',
+                                               'https://www.google.com/'),
+                                       chunkit(2, 'a', 'https://github.com/',
+                                               'http://www.python.org/'),
+                                       chunkit(4, 'a',
+                                               'http://www.haskell.org/',
+                                               'https://www.mozilla.com/'),
+                                       chunkit(5, 'a', 'http://www.erlang.org',
+                                               'http://golang.org/')],
+                           sub_chunks=[chunkit(3, 's',
+                                               'https://github.com/'),
+                                       chunkit(6, 's',
+                                               'http://golang.org')])
         p = parse_file_source(open(test_file('delta_chunk_source')))
         self.assertEqual(p, result)
 

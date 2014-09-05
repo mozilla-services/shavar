@@ -24,10 +24,10 @@ class Chunk(object):
 
     def __eq__(self, other):
         if (type(self) != type(other)
-              or self.type != other.type
-              or self.number != other.number
-              or self.hashes != other.hashes
-              or self.hash_len != other.hash_len):
+                or self.type != other.type
+                or self.number != other.number
+                or self.hashes != other.hashes
+                or self.hash_len != other.hash_len):
             return False
         return True
 
@@ -66,8 +66,8 @@ class ChunkList(object):
 
     def __eq__(self, other):
         if (type(self) != type(other)
-              or self.adds != other.adds
-              or self.subs != other.subs):
+                or self.adds != other.adds
+                or self.subs != other.subs):
             return False
         return True
 
@@ -85,3 +85,53 @@ class ChunkList(object):
         if chunk.number in chunk_list:
             raise ParseError("Duplicate chunk number: %d" % chunk.number)
         chunk_list[chunk.number] = chunk
+
+
+class Downloads(list):
+
+    def __init__(self, req_size=0):
+        if type(req_size) != int:
+            raise TypeError('req_size not an integer: "%s"' % req_size)
+
+        self.req_size = req_size
+        super(Downloads, self).__init__()
+
+    def __eq__(self, other):
+        if (type(self) != type(other)
+                or self.req_size != other.req_size
+                or not super(Downloads, self).__eq__(other)):
+            return False
+        return True
+
+
+class DownloadsListInfo(object):
+
+    def __init__(self, list_name, wants_mac=False, adds=[], subs=[]):
+        self.name = list_name
+        self.wants_mac = wants_mac
+        self.adds = set(adds)
+        self.subs = set(subs)
+
+    def add_claim(self, typ, chunk_num):
+        if typ == 's':
+            self.subs.add(chunk_num)
+        else:
+            self.adds.add(chunk_num)
+
+    def add_range_claim(self, typ, low, high):
+        for i in xrange(low, high + 1):
+            self.add_claim(typ, i)
+
+    def __eq__(self, other):
+        if (type(self) != type(other)
+                or self.name != other.name
+                or self.wants_mac != other.wants_mac
+                or self.adds != other.adds
+                or self.subs != other.subs):
+            return False
+        return True
+
+    def __repr__(self):
+        return "%s('%s, wants_mac=%s, adds=%s, subs=%s)" \
+            % (self.__class__.__name__, self.name, self.wants_mac, self.adds,
+               self.subs)

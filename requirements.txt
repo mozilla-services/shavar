@@ -5,5 +5,6 @@ konfig==0.9
 pyramid==1.5.1
 pyramid_chameleon==0.3
 pyramid_debugtoolbar==2.1
+raven==3.4.1
 statsd==3.0
 waitress==0.8.9

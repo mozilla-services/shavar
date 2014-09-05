@@ -1,3 +1,6 @@
+from itertools import chain
+import os
+
 from pyramid.httpexceptions import (
     HTTPBadRequest,
     HTTPNotFound,
@@ -12,85 +15,115 @@ from shavar.parse import parse_downloads, parse_gethash
 from shavar.stats import get_stats_client
 
 
-def _setting(request, key, default):
-    return request.registry.settings.get(key, default)
+def _setting(request, section, key, default=None):
+    return request.registry.settings.get("%s.%s" % (section, key), default)
 
 
 def list_view(request):
-    lists = request.registry.settings.get('lists_served', tuple())
-    result = HTTPOk()
-    result.content_type = 'text/plain'
-    # *NOT* semicolon terminated
-    result.body = '\n'.join(lists)
-    return result
+    lists = _setting(request, 'shavar', 'lists_served', tuple())
+
+    body = '\n'.join(lists) + '\n'
+    return HTTPOk(content_type='text/plain', body=body)
 
 
 def downloads_view(request):
     heka_client = get_heka_client()
     stats_client = get_stats_client()
 
-    resp_payload = {'interval': _setting(request, 'default_interval', 45 * 60),
+    resp_payload = {'interval': _setting(request, 'shavar', 'default_interval',
+                                         45 * 60),
                     'lists': {}}
 
     parsed = parse_downloads(request)
 
-    for lname, wants_mac, claims in parsed['lists']:
+    for list_info in parsed:
         # Do we even serve that list?
-        if lname not in _setting(request, 'lists_served', tuple()):
-            heka_client.warn('Unknown list "%s" reported; ignoring' % lname)
+        if list_info.name not in _setting(request, 'shavar', 'lists_served',
+                                          tuple()):
+            heka_client.warn('Unknown list "%s" reported; ignoring'
+                             % list_info.name)
             stats_client.incr('downloads.unknown.list')
             continue
-        provider, type_, format_ = lname.split('-', 3)
+        provider, type_, format_ = list_info.name.split('-', 3)
         if not provider or not type_ or not format_:
-            heka_client.warn('Unknown list format for "%s"; ignoring' % lname)
+            heka_client.warn('Unknown list format for "%s"; ignoring'
+                             % list_info.name)
             stats_client.incr('downloads.unknown.format')
             raise HTTPBadRequest('Incorrect format for the list name: "%s"'
-                                 % lname)
+                                 % list_info.name)
 
-        # A list in digest256 format means ignore the normal response body
-        # format of shavar and send a blob of the full length hashes directly
-        if format_ == "digest256":
-            try:
-                resp_payload['lists'][lname] = get_list(lname).fetch()
-            except NoDataError:
-                # We can't find the data for that list
-                heka_client.raven('Error reading digest256 list: %s' % lname)
-                stats_client.incr('downloads.list.%s.missing' % lname)
-                # Continue because protocol says ignore errors with lists
-        elif format_ == "shavar":
-            sblist = get_list(lname)
+        sblist = get_list(request, list_info.name)
 
-            # Calculate delta
-            to_add, to_sub = sblist.delta(claims)
+        # Calculate delta
+        to_add, to_sub = sblist.delta(list_info.adds, list_info.subs)
 
-            # No delta?  No response, I think.  Spec doesn't actually say.
-            if not to_add and not to_sub:
-                continue
+        # No delta?  No response, I think.  Spec doesn't actually say.
+        if not to_add and not to_sub:
+            continue
 
-            # Fetch the appropriate chunks
-            resp_payload['lists'][lname] = sblist.fetch(to_add, to_sub)
+        # Fetch the appropriate chunks
+        resp_payload['lists'][list_info.name] = sblist.fetch(to_add, to_sub)
 
-    # Format response body according to protocol version
-    proto_ver = float(request.GET.get('pver', _setting(request,
-                                                       'default_proto_ver',
-                                                       '2.0')))
-    if proto_ver >= 2.0 and proto_ver < 3.0:
-        payload = format_v2_downloads(request, resp_payload)
-        stats_client.incr('downloads.format.v2')
-    elif proto_ver >= 3.0:
-        payload = format_v3_downloads(request, resp_payload)
-        stats_client.incr('downloads.format.v3')
-
-    return HTTPOk(payload)
+    return HTTPOk(content_type="application/octet-stream",
+                  body=format_downloads(request, resp_payload))
 
 
-def gethash_view(request):
+def format_downloads(request, resp_payload):
+    """
+    Formats the response body according to protocol version
+    """
     heka_client = get_heka_client()
     stats_client = get_stats_client()
 
-    parsed = parse_gethash(request)
+    body = "n:{0}\n".format(resp_payload['interval'])
 
-    return HTTPNotFound()
+    for lname, ldata in resp_payload['lists'].iteritems():
+        body += "i:%s\n" % lname
+        # TODO  Should we prioritize subs over adds?
+        for chunk in chain(ldata['adds'], ldata['subs']):
+            # digest256 lists don't use URL redirects for data.  They simply
+            # include the data inline in the response
+            if ldata['type'] == 'digest256':
+                d = ''.join(chunk.hashes)
+                data = "{type}:{chunk_num}:{hash_len}:{payload_len}\n" \
+                       "{payload}".format(type=chunk.type,
+                                          chunk_num=chunk.number,
+                                          hash_len=chunk.hash_len,
+                                          payload_len=len(d), payload=d)
+            elif ldata['type'] == 'shavar':
+                fudge = os.path.join(_setting(request, lname,
+                                              'redirect_url_base'),
+                                     lname, "%d" % chunk.number)
+                data = 'u:{0}\n'.format(fudge)
+            else:
+                s = 'unsupported list type "%s" for "%s"' % (lname,
+                                                             ldata['type'])
+                heka_client.error(s)
+            body += data
+    return body
+
+
+#
+# gethash
+#
+def gethash_view(request):
+    stats_client = get_stats_client()
+
+    parsed = parse_gethash(request)
+    full = lookup_prefixes(request, parsed)
+
+    # FIXME MAC handling
+    body = ''
+    for lname, chunk_data in full.items():
+        for chunk_num, hashes in chunk_data.iteritems():
+            h = ''.join(hashes)
+            body += '{list_name}:{chunk_number}:{data_len}\n{data}' \
+                .format(list_name=lname, chunk_number=chunk_num,
+                        data_len=len(h), data=h)
+
+#    stats_client.incr('downloads.format.v2')
+
+    return HTTPOk(content_type="application/octet-stream", body=body)
 
 
 def newkey_view(request):
@@ -99,24 +132,3 @@ def newkey_view(request):
 
     return HTTPNotImplemented()
 
-
-def format_v2_downloads(request, payload):
-    body = "n:" + payload['interval'] + "\n"
-
-    for lname, ldata in payload['lists'].items():
-        # digest256 lists don't use URL redirects for data.  They simply include
-        # the data inline in the response
-        if ldata['type'] == 'digest256':
-            body += ""
-        elif ldata['type'] == 'shavar':
-            body += ""
-
-    return body
-
-
-def format_v2_gethash(request, payload):
-    pass
-
-
-def format_v3_downloads(request, payload):
-    pass

@@ -5,6 +5,7 @@ from urlparse import urlparse
 from shavar.exceptions import NoDataError, ParseError
 from shavar.parse import parse_file_source
 
+
 class Source(object):
     """
     Base class for data sources
@@ -27,18 +28,17 @@ class Source(object):
 
     def fetch(self, adds, subs):
         chunks = {'adds': [], 'subs': []}
-        for type_ in 'adds', 'subs':
-            for chunk in locals()[type_]:
-                chunks[type_].append(self.chunks[type_][chunk])
+        for chunk_num in adds:
+            chunks['adds'].append(self.chunks.adds[chunk_num])
+        for chunk_num in subs:
+            chunks['subs'].append(self.chunks.subs[chunk_num])
         return chunks
 
     def list_chunks(self):
-        adds = []
-        subs = []
-        for type_ in 'adds', 'subs':
-            for chunk in self.chunks[type_].keys():
-                locals()[type_].append(chunk)
-        return set(adds), set(subs)
+        return set(self.chunks.adds.keys()), set(self.chunks.subs.keys())
+
+    def has_prefix(self, prefix):
+        return self.chunks.has_prefix(prefix)
 
 
 # FIXME  Some of the logic here probably needs to be migrated into the Source
@@ -51,7 +51,8 @@ class FileSource(Source):
     def load(self):
         if not os.path.exists(self.url.path):
             # We can't find the data for that list
-            raise NoDataError('Known list, no data found: "%s"' % self.url.path)
+            raise NoDataError('Known list, no data found: "%s"'
+                              % self.url.path)
 
         try:
             with open(self.url.path, 'rb') as f:
@@ -60,17 +61,6 @@ class FileSource(Source):
                 self.last_refresh = int(time.time())
         except ParseError, e:
             raise ParseError('Error parsing "%s": %s' % (self.url.path, e))
-        except:
-            raise NoDataError('Known list, read failure: "%s"' % self.name)
-
-        # Reverse index for later registration of prefixes
-        prefixes = {}
-        for num, chunk in self.chunks['adds'].items():
-            for prefix in chunk['prefixes']:
-                if prefix not in prefixes:
-                    prefixes[prefix] = []
-                prefixes[prefix].append(num)
-        self.prefixes = prefixes
 
     def refresh(self):
         # Prevent constant refresh checks

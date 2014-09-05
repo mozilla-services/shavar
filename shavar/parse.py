@@ -1,40 +1,45 @@
 from shavar.exceptions import ParseError
+from shavar.types import Chunk, ChunkList, Downloads, DownloadsListInfo
 
 
 def parse_downloads(request):
-    parsed = {'req_size': None, 'lists': []}
+    parsed = Downloads()
 
-    body = request.body
-    body.strip()
-    stanzas = body.split("\n")
+    lineno = -1
+    for line in request.body_file:
+        lineno += 1
+        line = line.strip()
 
-    # Did client provide max size prefernce?
-    if stanzas[0].startswith("s;"):
-        size = stanzas.pop(0)
-        req_size = size.split(";", 2)[1]
-        req_size.strip()
-        try:
-            req_size = int(req_size)
-        except ValueError:
-            raise ParseError("Invalid requested size")
-        parsed['req_size'] = req_size
+        if not line or line.isspace():
+            continue
 
-    for stanza in stanzas:
-        if not stanza:
-            next
-        wants_mac = False
-        lname, chunklist = stanza.split(";", 2)
+        # Did client provide max size prefernce?
+        if line.startswith("s;"):
+            if lineno != 0:
+                return ParseError("Size request can only be the first line!")
+            req_size = line.split(";", 2)[1]
+            req_size.strip()
+            try:
+                req_size = int(req_size)
+            except ValueError:
+                raise ParseError("Invalid requested size")
+            parsed.req_size = req_size
+            continue
+
+        lname, chunklist = line.split(";", 2)
+        info = DownloadsListInfo(lname)
+
         chunks = chunklist.split(":")
         # Check for MAC
         if len(chunks) >= 1 and chunks[-1] == "mac":
             if request.GET.get('pver') == '3.0':
                 raise ParseError('MAC not supported in protocol version 3')
-            wants_mac = True
+            info.wants_mac = True
             chunks.pop(-1)
         # Client claims to have chunks for this list
         if not chunks or (len(chunks) == 1 and not chunks[0]):
-            parsed['lists'].append((lname, wants_mac, []))
-            return parsed
+            parsed.append(info)
+            return parsed  # FIXME   Why return here?
         # Uneven number of chunks should only occur if 'mac' was specified
         if len(chunks) % 2 != 0:
             raise ParseError("Invalid LISTINFO for %s" % lname)
@@ -47,9 +52,8 @@ def parse_downloads(request):
                                                                       lname))
 
             claim = []
-            chunk = chunks.pop(0)
-            chunk_list = chunk.split(',')
-            for chunk in chunk_list:
+            list_of_chunks = chunks.pop(0)
+            for chunk in list_of_chunks.split(','):
                 try:
                     chunk = int(chunk)
                 except ValueError:
@@ -67,38 +71,47 @@ def parse_downloads(request):
                             raise ParseError("Invalid RANGE \"%s\" for %s" %
                                              (chunk, lname))
 
-                        claim.extend(range(low, high + 1))
+                        info.add_range_claim(ctype, low, high)
                 except:
                     chunk_def = "%s:%s" % (ctype, chunk)
                     raise ParseError("Invalid chunk \"%s\" for %s" %
                                      (chunk_def, lname))
                 else:
-                    claim.append(chunk)
+                    info.add_claim(ctype, chunk)
             claims[ctype].extend(claim)
-        parsed['lists'].append((lname, wants_mac, {'adds': set(claims['a']),
-                                                   'subs': set(claims['s'])}))
+        parsed.append(info)
     return parsed
 
 
 def parse_gethash(request):
     parsed = []
 
-    body = request.body
-    body.strip()
+    # Early check to be sure we have something within the limits of a
+    # reasonably sized header.  Reasonable size defined as an arbitrary max
+    # of 2**8 bytes and a minimum of 3("4:4", a single prefix).  256 is
+    # probably waaaaaaaaaaay too large for a gethash request header.
+    eoh = request.body.find('\n')
+    if eoh <= 3 or eoh >= 256:
+        raise ParseError("Improbably small or large gethash header size: %d"
+                         % eoh)
+
+    body_file = request.body_file
 
     # determine size of individual prefixes and length of payload
-    eoh = body.find('\n')
-    header = body[:eoh]
-    prefix_len, read_len = [int(x) for x in header.split(':', 2)]
-    if read_len % prefix_len != 0:
-        raise ParseError("Body length invalid: \"%d\"" % read_len)
+    header = body_file.readline()
+    try:
+        prefix_len, payload_len = [int(x) for x in header.split(':', 2)]
+    except ValueError:
+        raise ParseError('Invalid prefix or payload size: "%s"' % header)
+    if payload_len % prefix_len != 0:
+        raise ParseError("Body length invalid: \"%d\"" % payload_len)
 
-    prefix_total = read_len / prefix_len
+    prefix_total = payload_len / prefix_len
     prefixes_read = 0
-    start = eoh + 1
+    total_read = 0
     while prefixes_read < prefix_total:
-        prefix = body[start:start + prefix_len]
-        start += prefix_len
+        prefix = body_file.read(prefix_len)
+        total_read += len(prefix)
         prefixes_read += 1
         parsed.append(prefix)
 
@@ -106,11 +119,11 @@ def parse_gethash(request):
     if prefixes_read != prefix_total:
         raise ParseError("Hash read mismatch: client claimed %d, read %d" %
                          (prefix_total, prefixes_read))
-    if start != len(body):
+    if total_read != payload_len:
         raise ParseError("Mismatch on gethash parse: client: %d, actual: %d" %
-                         (len(body), start))
+                         (payload_len, total_read))
 
-    return parsed
+    return set(parsed)  # unique-ify
 
 
 def parse_file_source(handle):
@@ -135,7 +148,7 @@ def parse_file_source(handle):
     #
     # * If 64 bit ints get involved, there are other issues to address
 
-    parsed = {'adds': {}, 'subs': {}}
+    parsed = ChunkList()
     while True:
         blob = handle.read(32)
 
@@ -155,7 +168,7 @@ def parse_file_source(handle):
         header = blob[:eol]
 
         if header.count(':') != 3:
-            raise ParseError('Incorrect number of colons in chunk header: '
+            raise ParseError('Incorrect number of fields in chunk header: '
                              '"%s"' % header)
 
         add_sub, chunk_num, hash_len, read_len = header.split(':', 4)
@@ -176,34 +189,19 @@ def parse_file_source(handle):
             raise ParseError('Chunk data length not a multiple of prefix '
                              'size: "%s"' % header)
 
-        blob = blob[eol+1:]
+        blob = blob[eol + 1:]
         blob += handle.read(read_len - len(blob))
         if blob is None or len(blob) < read_len:
             raise ParseError('Chunk data truncated for chunk %d' % chunk_num)
 
-        prefixes = {}
+        hashes = []
         pos = 0
         while pos < read_len:
-            h = blob[pos:pos + hash_len]
+            hashes.append(blob[pos:pos + hash_len])
             pos += hash_len
-            prefix = h[:4]
-            if prefix in prefixes:
-                prefixes[prefix].append(h)
-            else:
-                prefixes[prefix] = [h]
 
-        hashes = {'chunk': chunk_num, 'size': hash_len, 'prefixes': prefixes}
-
-        # FIXME This is so stupid
-        if add_sub == 'a':
-            add_sub = 'adds'
-        elif add_sub == 's':
-            add_sub = 'subs'
-
-        if chunk_num in parsed[add_sub]:
-            raise ParseError('Duplicate chunk in file: "%s' % header)
-
-        parsed[add_sub][chunk_num] = hashes
+        parsed.add_chunk(Chunk(chunk_type=add_sub, number=chunk_num,
+                               hashes=hashes))
 
     return parsed
 

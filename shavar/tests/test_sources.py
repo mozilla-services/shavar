@@ -4,6 +4,8 @@ import time
 import unittest
 
 from shavar.sources import DirectorySource, FileSource
+from shavar.types import ChunkList
+from shavar.tests.base import simple_adds, simple_subs
 
 
 class FileSourceTest(unittest.TestCase):
@@ -30,7 +32,8 @@ class FileSourceTest(unittest.TestCase):
     def test_load(self):
         f = FileSource("file://" + self.source.name)
         f.load()
-        self.assertEqual(f.prefixes, self.vals)
+        self.assertEqual(f.chunks, ChunkList(add_chunks=simple_adds,
+                                             sub_chunks=simple_subs))
 
     def test_refresh(self):
         # FIXME Timing issues causing intermittent failures.

@@ -6,18 +6,15 @@ from shavar.exceptions import MissingListDataError
 from shavar.sources import DirectorySource, FileSource
 
 
-_CACHE = {}
-# A (hopefully) slightly quicker index into looking up full length hashes
-_PREFIXES = {}
-
-
-def configure_lists(config_file, lists_to_serve):
-    global _CACHE
+def configure_lists(config_file, registry):
     config = Config(config_file)
 
+    lists_to_serve = config.mget('shavar', 'lists_served')
     if not lists_to_serve:
         raise ValueError("lists_served appears to be empty or missing "
                          "in the config \"%s\"!" % config.filename)
+
+    registry['shavar.serving'] = {}
 
     for lname in lists_to_serve:
         if config.has_section(lname):
@@ -37,49 +34,27 @@ def configure_lists(config_file, lists_to_serve):
             raise ValueError('Unknown list type for "%s": "%s"' % (lname,
                                                                    type_))
 
-        _CACHE.update({lname: l})
+        registry['shavar.serving'][lname] = l
 
 
-def clear_caches():
-    global _CACHE, _PREFIXES
-    _CACHE = {}
-    _PREFIXES = {}
-
-
-def get_list(list_name):
-    if list_name not in _CACHE:
+def get_list(request, list_name):
+    if list_name not in request.registry['shavar.serving']:
         raise MissingListDataError('Not serving requested list "%s"', list_name)
-    return _CACHE[list_name]
+    return request.registry['shavar.serving'][list_name]
 
 
-def add_prefixes(list_name, prefix_chunk_map):
-    """
-    The SB wire protocol doesn't require a list to check against for a given
-    hash prefix from the client, so all lists have to be checked.  Easier to
-    have prefixes registered at data load time.
-    """
-    global _PREFIXES
-    for prefix, chunks in prefix_chunk_map.items():
-        if prefix not in _PREFIXES:
-            _PREFIXES[prefix] = {}
-        if not list_name in _PREFIXES[prefix]:
-            _PREFIXES[prefix][list_name] = set()
-        _PREFIXES[prefix][list_name].update(set(chunks))
-
-
-def lookup_prefixes(prefixes):
+def lookup_prefixes(request, prefixes):
     """
     prefixes is an iterable of hash prefixes to look up
 
-    Returns a hash of the format:
+    Returns a dict of the format:
 
-    { prefix0: { list-name0: { chunk_num0: [ full-hash, ... ],
-                               chunk_num1: [ full-hash, ... ],
-                               ... },
-                 list-name1: { chunk_num0: [ full-hash, ... ],
-                               ... },
-                 ... },
-      prefix1: { ... }
+    { list-name0: { chunk_num0: [ full-hash, ... ],
+                    chunk_num1: [ full-hash, ... ],
+                    ... },
+      list-name1: { chunk_num0: [ full-hash, ... ],
+                    ... },
+      ... }
     }
 
     Prefixes that aren't found are ignored
@@ -87,16 +62,17 @@ def lookup_prefixes(prefixes):
 
     found = {}
 
-    for prefix in prefixes:
-        if prefix in _PREFIXES:
-            prefix_data = _PREFIXES[prefix]
-            if prefix not in found:
-                found[prefix] = {}
-            for list_name in prefix_data:
-                sblist = get_list(list_name)
-                for chunk in sblist.fetch_adds(prefix_data[list_name]):
-                    found[prefix][list_name] = {chunk['chunk']:
-                                                chunk['prefixes'][prefix]}
+    for list_name, sblist in request.registry['shavar.serving'].iteritems():
+        for prefix in prefixes:
+            list_o_chunks = sblist.has_prefix(prefix)
+            if not list_o_chunks:
+                continue
+            if list_name not in found:
+                found[list_name] = {}
+            for chunk in list_o_chunks:
+                if chunk.number not in found[list_name]:
+                    found[list_name][chunk.number] = []
+                found[list_name][chunk.number].extend(chunk.get_hashes(prefix))
     return found
 
 
@@ -106,6 +82,7 @@ class SafeBrowsingList(object):
     """
 
     # Size of prefixes in bytes
+    hash_size = 32
     prefix_size = 4
     type = 'invalid'
 
@@ -115,12 +92,11 @@ class SafeBrowsingList(object):
         self.url = urlparse(source_url)
         self.settings = settings
         if (self.url.scheme == 'file' or
-            not (self.url.scheme and self.url.netloc)):
-            self._source = FileSource(self.source_url)
+                not (self.url.scheme and self.url.netloc)):
+            self._source = FileSource(self.source_url, self)
         else:
             raise Exception('Only filesystem access supported at this time')
         self._source.load()
-        add_prefixes(self.name, self._source.prefixes)
 
     def refresh(self):
         self._source.refresh()
@@ -150,6 +126,12 @@ class SafeBrowsingList(object):
 
     def fetch_subs(self, sub_chunks):
         return self.fetch([], sub_chunks)['subs']
+
+    def has_prefix(self, prefix):
+        # Don't bother looking for prefixes that aren't the right size
+        if len(prefix) != self.prefix_size:
+            return ()
+        return self._source.has_prefix(prefix)
 
 
 class Digest256(SafeBrowsingList):

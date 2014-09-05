@@ -2,69 +2,61 @@ import hashlib
 import tempfile
 import unittest
 
-from shavar.lists import (
-    clear_caches,
-    configure_lists,
-    get_list,
-    lookup_prefixes)
-from shavar.tests.base import test_file
+from pyramid import testing
 
-
-CONF = """[shavar]
-default_proto_ver = 2.0
-lists_served = mozpub-track-digest256
-               moz-abp-shavar
-lists_root = tests
-
-[mozpub-track-digest256]
-type = digest256
-source = {source}
-
-[moz-abp-shavar]
-type = shavar
-source = {source}
-redirect_url_base = https://tracking.services.mozilla.com/
-"""
+from shavar.lists import configure_lists, get_list, lookup_prefixes, Digest256
+from shavar.types import Chunk
+from shavar.tests.base import (
+    conf_tmpl,
+    dummy,
+    hashes,
+    simple_adds,
+    simple_subs,
+    test_file)
 
 
 class ListsTest(unittest.TestCase):
 
+    hm = hashes['moz']
+    hg = hashes['goog']
+
     def _config(self, fname='chunk_source'):
         conf = tempfile.NamedTemporaryFile()
         source = test_file(fname)
-        conf.write(CONF.format(source=source))
+        conf.write(conf_tmpl.format(source=source))
         conf.flush()
         conf.seek(0)
+        self.config = testing.setUp()
         configure_lists(conf.name, ('mozpub-track-digest256',
-                                    'moz-abp-shavar'))
+                                    'moz-abp-shavar'),
+                        self.config.registry)
         return conf
 
     def setUp(self):
+        self.maxDiff = None
         self.conf = self._config()
 
     def tearDown(self):
-        clear_caches()
         self.conf.close()
         self.conf = None
+        testing.tearDown()
 
-    def test_lookup_prefixes(self):
-        hm = hashlib.sha256('https://www.mozilla.org/').digest()
-        hg = hashlib.sha256('https://www.google.com/').digest()
-        self.assertEqual(lookup_prefixes(['\xd0\xe1\x96\xa0']),
-                         {'\xd0\xe1\x96\xa0': {'moz-abp-shavar': {17: [hg]},
-                                               'mozpub-track-digest256':
-                                               {17: [hg]}}})
-        self.assertEqual(lookup_prefixes(['\xd0\xe1\x96\xa0', '\xfdm~\xb5']),
-                         {'\xd0\xe1\x96\xa0': {'moz-abp-shavar': {17: [hg]},
-                                               'mozpub-track-digest256':
-                                               {17: [hg]}},
-                          '\xfdm~\xb5': {'moz-abp-shavar': {17: [hm]},
-                                         'mozpub-track-digest256':
-                                         {17: [hm]}}})
+    def test_0_get_list(self):
+        dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
+        sblist = get_list(dumdum, 'mozpub-track-digest256')
+        self.assertIsInstance(sblist, Digest256)
 
-    def test_delta(self):
+    def test_1_lookup_prefixes(self):
+        sblist = self.config.registry['shavar:serving'].get('moz-abp-shavar')
+
+        dumdum = dummy(body='4:4\n%s' % hashes['goog'][:4], path='/gethash')
+        prefixes = lookup_prefixes(dumdum, [self.hg[:4]])
+        self.assertEqual(prefixes, {'moz-abp-shavar': {17: [hashes['goog']]}})
+
+    def test_2_delta(self):
         self.conf = self._config('delta_chunk_source')
-        sblist = get_list('mozpub-track-digest256')
+        dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
+        sblist = get_list(dumdum, 'mozpub-track-digest256')
         # By way of explanation:
         #
         # In the data file.
