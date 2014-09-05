@@ -19,7 +19,8 @@ simple_subs = [Chunk(chunk_type='s', number=18, hashes=set([hashes['goog'],
                                                             hashes['moz']]),
                      hash_size=32)]
 
-conf_tmpl = """[shavar]
+conf_tmpl = """
+[shavar]
 default_proto_ver = 2.0
 lists_served = mozpub-track-digest256
                moz-abp-shavar
