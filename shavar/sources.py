@@ -18,6 +18,7 @@ class Source(object):
         self.last_refresh = 0
         self.last_check = 0
         self.chunks = None
+        self.chunk_index = None
         self.prefixes = None
 
     def load(self):
@@ -35,7 +36,7 @@ class Source(object):
         return chunks
 
     def list_chunks(self):
-        return set(self.chunks.adds.keys()), set(self.chunks.subs.keys())
+        return (self.chunk_index['adds'], self.chunk_index['subs'])
 
     def find_prefix(self, prefix):
         return self.chunks.find_prefix(prefix)
@@ -59,6 +60,8 @@ class FileSource(Source):
                 self.chunks = parse_file_source(f)
                 self.last_check = int(time.time())
                 self.last_refresh = int(time.time())
+                self.chunk_index = {'adds': set(self.chunks.adds.keys()),
+                                    'subs': set(self.chunks.subs.keys())}
         except ParseError, e:
             raise ParseError('Error parsing "%s": %s' % (self.url.path, e))
 
