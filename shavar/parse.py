@@ -72,10 +72,6 @@ def parse_downloads(request):
                                              (chunk, lname))
 
                         info.add_range_claim(ctype, low, high)
-                except:
-                    chunk_def = "%s:%s" % (ctype, chunk)
-                    raise ParseError("Invalid chunk \"%s\" for %s" %
-                                     (chunk_def, lname))
                 else:
                     info.add_claim(ctype, chunk)
             claims[ctype].extend(claim)
