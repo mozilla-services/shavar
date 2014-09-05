@@ -60,9 +60,3 @@ class FileSourceTest(unittest.TestCase):
 #        f = FileSource("file://" + self.source.name)
 #        f.load()
 #        self.assertEqual(f.fetch([17], [18]), self.vals)
-
-
-class DirectorySourceTest(unittest.TestCase):
-
-    def test_directory_source(self):
-        pass
