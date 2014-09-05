@@ -77,7 +77,3 @@ class FileSource(Source):
         if int(time.time()) - self.last_refresh > self.interval:
             self.refresh()
         return super(FileSource, self).fetch(adds, subs)
-
-
-class DirectorySource(Source):
-    pass
