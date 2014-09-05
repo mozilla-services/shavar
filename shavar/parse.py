@@ -5,9 +5,7 @@ from shavar.types import Chunk, ChunkList, Downloads, DownloadsListInfo
 def parse_downloads(request):
     parsed = Downloads()
 
-    lineno = -1
-    for line in request.body_file:
-        lineno += 1
+    for lineno, line in enumerate(request.body_file):
         line = line.strip()
 
         if not line or line.isspace():
