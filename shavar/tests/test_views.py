@@ -6,7 +6,7 @@ from konfig import Config
 from pyramid import testing
 from webtest import TestApp
 
-from shavar import main
+from shavar import main, read_config
 from shavar.lists import configure_lists
 from shavar.tests.base import conf_tmpl, dummy, hashes, test_file
 
@@ -21,9 +21,8 @@ class ViewTests(unittest.TestCase):
         conf.seek(0)
         c = Config(conf.name)
         self.config = testing.setUp(settings=c)
-        configure_lists(conf.name, ('mozpub-track-digest256',
-                                    'moz-abp-shavar'),
-                        self.config.registry)
+        read_config(conf.name, self.config.registry.settings)
+        configure_lists(conf.name, self.config.registry)
         return conf
 
     def setUp(self):
@@ -40,7 +39,7 @@ class ViewTests(unittest.TestCase):
         request = dummy('', path='/list')
         response = list_view(request)
         self.assertEqual(response.text,
-                         "mozpub-track-digest256\nmoz-abp-shavar")
+                         "mozpub-track-digest256\nmoz-abp-shavar\n")
 
     def test_1_downloads_view(self):
         from shavar.views import downloads_view

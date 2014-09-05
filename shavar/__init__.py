@@ -12,7 +12,7 @@ from shavar.views import (list_view,
                           newkey_view)
 
 
-def _read_config(config_file, settings):
+def read_config(config_file, settings):
     config = Config(config_file)
 
     for key, value in config.get_map('shavar').iteritems():
@@ -27,7 +27,7 @@ def _read_config(config_file, settings):
 def main(global_config, _heka_client=None, _stats_client=None, **settings):
     """ This function returns a Pyramid WSGI application.
     """
-    _read_config(global_config['__file__'], settings)
+    read_config(global_config['__file__'], settings)
 
     config = Configurator(settings=settings)
 

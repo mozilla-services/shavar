@@ -4,6 +4,7 @@ import unittest
 
 from pyramid import testing
 
+from shavar import read_config
 from shavar.lists import configure_lists, get_list, lookup_prefixes, Digest256
 from shavar.types import Chunk
 from shavar.tests.base import (
@@ -27,9 +28,10 @@ class ListsTest(unittest.TestCase):
         conf.flush()
         conf.seek(0)
         self.config = testing.setUp()
-        configure_lists(conf.name, ('mozpub-track-digest256',
-                                    'moz-abp-shavar'),
-                        self.config.registry)
+        # I can't imagine why rfkelly found this to be a subwonderful
+        # technique.  Nope.
+        read_config(conf.name, self.config.registry.settings)
+        configure_lists(conf.name, self.config.registry)
         return conf
 
     def setUp(self):
@@ -47,7 +49,7 @@ class ListsTest(unittest.TestCase):
         self.assertIsInstance(sblist, Digest256)
 
     def test_1_lookup_prefixes(self):
-        sblist = self.config.registry['shavar:serving'].get('moz-abp-shavar')
+        sblist = self.config.registry['shavar.serving'].get('moz-abp-shavar')
 
         dumdum = dummy(body='4:4\n%s' % hashes['goog'][:4], path='/gethash')
         prefixes = lookup_prefixes(dumdum, [self.hg[:4]])
