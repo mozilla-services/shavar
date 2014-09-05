@@ -11,7 +11,7 @@ def parse_downloads(request):
         if not line or line.isspace():
             continue
 
-        # Did client provide max size prefernce?
+        # Did client provide max size preference?
         if line.startswith("s;"):
             if lineno != 0:
                 return ParseError("Size request can only be the first line!")
