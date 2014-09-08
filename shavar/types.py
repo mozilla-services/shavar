@@ -7,7 +7,7 @@ class Chunk(object):
             raise ValueError('Invalid chunk type: "%s"' % chunk_type)
 
         if number is None:
-            raise ValieError('Invalid chunk number: "%d"' % number)
+            raise ValueError('Invalid chunk number: "%d"' % number)
 
         self.type = chunk_type
         self.number = number

@@ -70,4 +70,3 @@ def dummy(body, path="/downloads", **kwargs):
 
 def test_file(fname):
     return os.path.join(os.path.dirname(__file__), fname)
-

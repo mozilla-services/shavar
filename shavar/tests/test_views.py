@@ -1,12 +1,10 @@
 import tempfile
-import os
 import unittest
 
 from konfig import Config
 from pyramid import testing
-from webtest import TestApp
 
-from shavar import main, read_config
+from shavar import read_config
 from shavar.lists import configure_lists
 from shavar.tests.base import conf_tmpl, dummy, hashes, test_file
 
@@ -94,6 +92,6 @@ class ViewTests(unittest.TestCase):
         from shavar.views import newkey_view
         if False:
             expected = ''
-            request = dummy(body, path='/newkey')
+            request = dummy('', path='/newkey')
             response = newkey_view(request)
             self.assertEqual(response.body, expected)

@@ -12,4 +12,3 @@ class ParseError(BaseError):
 
 class MissingListDataError(BaseError):
     "Raised when we don't know about a list"
-

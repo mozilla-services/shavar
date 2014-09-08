@@ -41,8 +41,6 @@ class FileSourceTest(unittest.TestCase):
             f = FileSource("file://" + self.source.name,
                            refresh_interval=0.1)
             f.load()
-            lc = f.last_check
-            lr = f.last_refresh
             self.assertFalse(f.refresh())
             self.source.seek(0)
             self.source.write("%s\n%s" % (self.add, self.sub))
