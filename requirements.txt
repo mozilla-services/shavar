@@ -2,6 +2,7 @@
 heka-py==0.30.3
 heka-py-raven==0.7
 konfig==0.9
+Paste==1.7.5.1
 pyramid==1.5.1
 pyramid_chameleon==0.3
 pyramid_debugtoolbar==2.1
