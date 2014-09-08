@@ -1,0 +1,18 @@
+language: python
+
+python:
+  - "2.6"
+  - "2.7"
+
+notifications:
+  irc:
+    channels:
+      - "irc.mozilla.org#services-dev"
+    use_notice: false
+    skip_join: false
+
+install:
+  - make build
+
+script:
+  - make test
