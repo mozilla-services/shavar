@@ -39,7 +39,8 @@ def configure_lists(config_file, registry):
 
 def get_list(request, list_name):
     if list_name not in request.registry['shavar.serving']:
-        raise MissingListDataError('Not serving requested list "%s"', list_name)
+        errmsg = 'Not serving requested list "%s"' % (list_name,)
+        raise MissingListDataError(errmsg)
     return request.registry['shavar.serving'][list_name]
 
 

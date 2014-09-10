@@ -3,12 +3,9 @@ import os
 
 from pyramid.httpexceptions import (
     HTTPBadRequest,
-    HTTPNotFound,
     HTTPNotImplemented,
-    HTTPServiceUnavailable,
     HTTPOk)
 
-from shavar.exceptions import NoDataError
 from shavar.heka_logging import get_heka_client
 from shavar.lists import get_list, lookup_prefixes
 from shavar.parse import parse_downloads, parse_gethash
@@ -73,7 +70,7 @@ def format_downloads(request, resp_payload):
     Formats the response body according to protocol version
     """
     heka_client = get_heka_client()
-    stats_client = get_stats_client()
+    # stats_client = get_stats_client()
 
     body = "n:{0}\n".format(resp_payload['interval'])
 
@@ -107,8 +104,6 @@ def format_downloads(request, resp_payload):
 # gethash
 #
 def gethash_view(request):
-    stats_client = get_stats_client()
-
     parsed = parse_gethash(request)
     full = lookup_prefixes(request, parsed)
 
@@ -121,14 +116,14 @@ def gethash_view(request):
                 .format(list_name=lname, chunk_number=chunk_num,
                         data_len=len(h), data=h)
 
-#    stats_client.incr('downloads.format.v2')
+    # stats_client = get_stats_client()
+    # stats_client.incr('downloads.format.v2')
 
     return HTTPOk(content_type="application/octet-stream", body=body)
 
 
 def newkey_view(request):
-    heka_client = get_heka_client()
-    stats_client = get_stats_client()
+    # heka_client = get_heka_client()
+    # stats_client = get_stats_client()
 
     return HTTPNotImplemented()
-

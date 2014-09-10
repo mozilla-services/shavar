@@ -38,8 +38,9 @@ def main(global_config, _heka_client=None, _stats_client=None, **settings):
     else:
         config.registry.heka_client = _heka_client
 
-    config.registry.stats_client = configure_stats(settings['shavar.statsd_host'],
-                                                   _client=_stats_client)
+    stats_client = configure_stats(settings['shavar.statsd_host'],
+                                   _client=_stats_client)
+    config.registry.stats_client = stats_client
 
     # Set up our data sources
     configure_lists(global_config['__file__'], config.registry)

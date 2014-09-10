@@ -7,8 +7,6 @@ from shavar.types import ChunkList, Chunk, Downloads, DownloadsListInfo
 from shavar.tests.base import (
     dummy,
     hashes,
-    simple_adds,
-    simple_subs,
     test_file)
 
 

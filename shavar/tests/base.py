@@ -71,3 +71,5 @@ def dummy(body, path="/downloads", **kwargs):
 def test_file(fname):
     return os.path.join(os.path.dirname(__file__), fname)
 
+# Ensure that test runners done think this is an actual testcase.
+test_file.__test__ = False
