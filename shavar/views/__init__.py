@@ -1,4 +1,5 @@
 from itertools import chain
+import logging
 import os
 
 from pyramid.httpexceptions import (
@@ -6,10 +7,23 @@ from pyramid.httpexceptions import (
     HTTPNotImplemented,
     HTTPOk)
 
-from shavar.heka_logging import get_heka_client
 from shavar.lists import get_list, lookup_prefixes
 from shavar.parse import parse_downloads, parse_gethash
-from shavar.stats import get_stats_client
+
+
+def includeme(config):
+    config.add_route('list', '/list')
+    config.add_view(list_view, route_name='list', request_method='GET')
+
+    config.add_route('downloads', '/downloads')
+    config.add_view(downloads_view, route_name='downloads',
+                    request_method='POST')
+
+    config.add_route('gethash', '/gethash')
+    config.add_view(gethash_view, route_name='gethash', request_method='POST')
+
+    config.add_route('newkey', '/newkey')
+    config.add_view(newkey_view, route_name='newkey', request_method='GET')
 
 
 def _setting(request, section, key, default=None):
@@ -24,8 +38,7 @@ def list_view(request):
 
 
 def downloads_view(request):
-    heka_client = get_heka_client()
-    stats_client = get_stats_client()
+    logger = logging.get_logger('shavar')
 
     resp_payload = {'interval': _setting(request, 'shavar', 'default_interval',
                                          45 * 60),
@@ -37,17 +50,16 @@ def downloads_view(request):
         # Do we even serve that list?
         if list_info.name not in _setting(request, 'shavar', 'lists_served',
                                           tuple()):
-            heka_client.warn('Unknown list "%s" reported; ignoring'
-                             % list_info.name)
-            stats_client.incr('downloads.unknown.list')
+            logger.warn('Unknown list "%s" reported; ignoring'
+                        % list_info.name)
+            # stats_client.incr('downloads.unknown.list')
             continue
         provider, type_, format_ = list_info.name.split('-', 3)
         if not provider or not type_ or not format_:
-            heka_client.warn('Unknown list format for "%s"; ignoring'
-                             % list_info.name)
-            stats_client.incr('downloads.unknown.format')
-            raise HTTPBadRequest('Incorrect format for the list name: "%s"'
-                                 % list_info.name)
+            s = 'Unknown list format for "%s"; ignoring' % list_info.name
+            logger.error(s)
+            # stats_client.incr('downloads.unknown.format')
+            raise HTTPBadRequest(s)
 
         sblist = get_list(request, list_info.name)
 
@@ -69,8 +81,7 @@ def format_downloads(request, resp_payload):
     """
     Formats the response body according to protocol version
     """
-    heka_client = get_heka_client()
-    # stats_client = get_stats_client()
+    logger = logging.get_logger('shavar')
 
     body = "n:{0}\n".format(resp_payload['interval'])
 
@@ -95,7 +106,7 @@ def format_downloads(request, resp_payload):
             else:
                 s = 'unsupported list type "%s" for "%s"' % (lname,
                                                              ldata['type'])
-                heka_client.error(s)
+                logger.error(s)
             body += data
     return body
 
@@ -116,14 +127,8 @@ def gethash_view(request):
                 .format(list_name=lname, chunk_number=chunk_num,
                         data_len=len(h), data=h)
 
-    # stats_client = get_stats_client()
-    # stats_client.incr('downloads.format.v2')
-
     return HTTPOk(content_type="application/octet-stream", body=body)
 
 
 def newkey_view(request):
-    # heka_client = get_heka_client()
-    # stats_client = get_stats_client()
-
     return HTTPNotImplemented()

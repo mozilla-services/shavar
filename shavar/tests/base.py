@@ -1,8 +1,11 @@
 import hashlib
 import io
 import os.path
+import sys
 
 from pyramid import testing
+
+from mozsvc.tests.support import TestCase
 
 from shavar.types import Chunk
 
@@ -73,3 +76,18 @@ def test_file(fname):
 
 # Ensure that test runners done think this is an actual testcase.
 test_file.__test__ = False
+
+
+class ShavarTestCase(TestCase):
+
+    hm = hashes['moz']
+    hg = hashes['goog']
+
+    def setUp(self):
+        self.maxDiff = None
+        super(ShavarTestCase, self).setUp()
+
+    def get_configurator(self):
+        config = super(ShavarTestCase, self).get_configurator()
+        config.include("shavar")
+        return config

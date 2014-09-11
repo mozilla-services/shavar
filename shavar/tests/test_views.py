@@ -1,36 +1,9 @@
-import tempfile
-import unittest
-
-from konfig import Config
 from pyramid import testing
 
-from shavar import read_config
-from shavar.lists import configure_lists
-from shavar.tests.base import conf_tmpl, dummy, hashes, test_file
+from shavar.tests.base import dummy, hashes, ShavarTestCase
 
 
-class ViewTests(unittest.TestCase):
-
-    def _config(self, fname='chunk_source'):
-        conf = tempfile.NamedTemporaryFile()
-        source = test_file(fname)
-        conf.write(conf_tmpl.format(source=source))
-        conf.flush()
-        conf.seek(0)
-        c = Config(conf.name)
-        self.config = testing.setUp(settings=c)
-        read_config(conf.name, self.config.registry.settings)
-        configure_lists(conf.name, self.config.registry)
-        return conf
-
-    def setUp(self):
-        self.maxDiff = None
-        self.conf = self._config()
-
-    def tearDown(self):
-        self.conf.close()
-        self.conf = None
-        testing.tearDown()
+class ViewTests(ShavarTestCase):
 
     def test_0_list_view(self):
         from shavar.views import list_view
@@ -39,11 +12,21 @@ class ViewTests(unittest.TestCase):
         self.assertEqual(response.text,
                          "mozpub-track-digest256\nmoz-abp-shavar\n")
 
+    def test_3_newkey_view(self):
+        from shavar.views import newkey_view
+        if False:
+            expected = ''
+            request = dummy('', path='/newkey')
+            response = newkey_view(request)
+            self.assertEqual(response.body, expected)
+
+
+class DeltaViewTests(ShavarTestCase):
+
+    ini_file = 'tests_delta.ini'
+
     def test_1_downloads_view(self):
         from shavar.views import downloads_view
-        # Use a more complex source than the default
-        self.conf = self._config('delta_chunk_source')
-
         req = "moz-abp-shavar;a:1-2,5:s:3\n"
         req += "mozpub-track-digest256;a:1-2:s:6"
         expected = "n:2700\n" \
@@ -71,8 +54,6 @@ class ViewTests(unittest.TestCase):
 
     def test_2_gethash_view(self):
         from shavar.views import gethash_view
-        # Use a more complex source than the default
-        self.conf = self._config('delta_chunk_source')
         prefixes = "\xd0\xe1\x96\xa0" \
                    "\xfdm~\xb5" \
                    "v\x9c\xf8i" \
@@ -87,11 +68,3 @@ class ViewTests(unittest.TestCase):
         request = dummy(body, path='/gethash')
         response = gethash_view(request)
         self.assertEqual(response.body, expected)
-
-    def test_3_newkey_view(self):
-        from shavar.views import newkey_view
-        if False:
-            expected = ''
-            request = dummy('', path='/newkey')
-            response = newkey_view(request)
-            self.assertEqual(response.body, expected)

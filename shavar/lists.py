@@ -1,29 +1,25 @@
 import os.path
 from urlparse import urlparse
 
-from konfig import Config
 from shavar.exceptions import MissingListDataError
 from shavar.sources import FileSource
 
 
-def configure_lists(config_file, registry):
-    config = Config(config_file)
-
-    lists_to_serve = config.mget('shavar', 'lists_served')
+def includeme(config):
+    lists_to_serve = config.registry.settings.get('shavar.lists_served', [])
     if not lists_to_serve:
         raise ValueError("lists_served appears to be empty or missing "
                          "in the config \"%s\"!" % config.filename)
 
-    registry['shavar.serving'] = {}
+    config.registry['shavar.serving'] = {}
 
     for lname in lists_to_serve:
-        if config.has_section(lname):
-            settings = config.get_map(lname)
-        else:
-            defaults = config.get_map('shavar')
-            settings = {'type': 'shavar',
-                        'source': os.path.join(defaults.get('lists_root',
-                                                            ''), lname)}
+        settings = config.registry.settings.getsection(lname)
+
+        # defaults = config.get_map('shavar')
+        # settings = {'type': 'shavar',
+        #            'source': os.path.join(defaults.get('lists_root',
+        #                                                ''), lname)}
 
         type_ = settings.get('type', '')
         if type_ == 'digest256':
@@ -34,7 +30,7 @@ def configure_lists(config_file, registry):
             raise ValueError('Unknown list type for "%s": "%s"' % (lname,
                                                                    type_))
 
-        registry['shavar.serving'][lname] = list_
+        config.registry['shavar.serving'][lname] = list_
 
 
 def get_list(request, list_name):
