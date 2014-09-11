@@ -1,5 +1,3 @@
-from pyramid import testing
-
 from shavar.tests.base import dummy, hashes, ShavarTestCase
 
 

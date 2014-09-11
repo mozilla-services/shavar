@@ -1,4 +1,3 @@
-import os.path
 from urlparse import urlparse
 
 from shavar.exceptions import MissingListDataError

@@ -1,7 +1,6 @@
 import hashlib
 import io
 import os.path
-import sys
 
 from pyramid import testing
 

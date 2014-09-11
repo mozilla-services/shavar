@@ -1,7 +1,3 @@
-import tempfile
-
-from pyramid import testing
-
 from shavar.lists import get_list, lookup_prefixes, Digest256
 from shavar.tests.base import dummy, hashes, ShavarTestCase
 

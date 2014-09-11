@@ -38,7 +38,7 @@ def list_view(request):
 
 
 def downloads_view(request):
-    logger = logging.get_logger('shavar')
+    logger = logging.getLogger('shavar')
 
     resp_payload = {'interval': _setting(request, 'shavar', 'default_interval',
                                          45 * 60),
@@ -81,7 +81,7 @@ def format_downloads(request, resp_payload):
     """
     Formats the response body according to protocol version
     """
-    logger = logging.get_logger('shavar')
+    logger = logging.getLogger('shavar')
 
     body = "n:{0}\n".format(resp_payload['interval'])
 
