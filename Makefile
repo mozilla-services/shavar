@@ -6,6 +6,7 @@ BUILD_TMP = /tmp/syncstorage-build.${USER}
 PYPI = https://pypi.python.org/simple
 INSTALL = $(PIP) install -U -i $(PYPI)
 FLAKE8 ?= ./local/bin/flake8
+NOSETESTS ?= ./local/bin/nosetests
 
 .PHONY: all build test
 
@@ -23,6 +24,6 @@ build:
 test:
 	# Check that flake8 passes before bothering to run anything.
 	# This can really cut down time wasted by typos etc.
-	$(FLAKE8) shavar
+	$(FLAKE7) shavar
 	# Run the actual testcases.
-	./local/bin/nosetests -s ./shavar/tests
+	$(NOSETESTS) -s ./shavar/tests
