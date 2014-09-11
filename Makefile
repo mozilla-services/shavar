@@ -24,6 +24,6 @@ build:
 test:
 	# Check that flake8 passes before bothering to run anything.
 	# This can really cut down time wasted by typos etc.
-	$(FLAKE7) shavar
+	$(FLAKE8) shavar
 	# Run the actual testcases.
 	$(NOSETESTS) -s ./shavar/tests
