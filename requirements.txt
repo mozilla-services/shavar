@@ -6,11 +6,7 @@ pyramid_chameleon==0.3
 pyramid_debugtoolbar==2.1
 statsd==3.0
 waitress==0.8.9
-#
-# Just until mozsvc 0.8 is released
-#
-#mozsvc==0.8
-https://github.com/mozilla-services/mozservices/archive/aed31bbe35544c0523e85d4488a8ea2705d0457f.zip
+mozsvc==0.8
 #
 # mozsvc has some wonky issues with testing dependencies
 #
