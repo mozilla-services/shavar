@@ -11,12 +11,11 @@ class ViewTests(ShavarTestCase):
                          "mozpub-track-digest256\nmoz-abp-shavar\n")
 
     def test_3_newkey_view(self):
-        from shavar.views import newkey_view
-        if False:
-            expected = ''
-            request = dummy('', path='/newkey')
-            response = newkey_view(request)
-            self.assertEqual(response.body, expected)
+        # from shavar.views import newkey_view
+        # Not implemented at the moment because Mozilla requires HTTPS for its
+        # hosting site.  As a result the implmementation has been delayed a
+        # bit.
+        pass
 
 
 class DeltaViewTests(ShavarTestCase):

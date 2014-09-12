@@ -2,6 +2,8 @@ from itertools import chain
 import logging
 import os
 
+from mozsvc.metrics import annotate_request
+
 from pyramid.httpexceptions import (
     HTTPBadRequest,
     HTTPNotImplemented,
@@ -9,6 +11,9 @@ from pyramid.httpexceptions import (
 
 from shavar.lists import get_list, lookup_prefixes
 from shavar.parse import parse_downloads, parse_gethash
+
+
+logger = logging.getLogger('shavar')
 
 
 def includeme(config):
@@ -38,8 +43,6 @@ def list_view(request):
 
 
 def downloads_view(request):
-    logger = logging.getLogger('shavar')
-
     resp_payload = {'interval': _setting(request, 'shavar', 'default_interval',
                                          45 * 60),
                     'lists': {}}
@@ -52,13 +55,13 @@ def downloads_view(request):
                                           tuple()):
             logger.warn('Unknown list "%s" reported; ignoring'
                         % list_info.name)
-            # stats_client.incr('downloads.unknown.list')
+            annotate_request(request, "shavar.downloads.unknown.list", 1)
             continue
         provider, type_, format_ = list_info.name.split('-', 3)
         if not provider or not type_ or not format_:
             s = 'Unknown list format for "%s"; ignoring' % list_info.name
             logger.error(s)
-            # stats_client.incr('downloads.unknown.format')
+            annotate_request(request, "shavar.downloads.unknown.format", 1)
             raise HTTPBadRequest(s)
 
         sblist = get_list(request, list_info.name)
@@ -81,8 +84,6 @@ def format_downloads(request, resp_payload):
     """
     Formats the response body according to protocol version
     """
-    logger = logging.getLogger('shavar')
-
     body = "n:{0}\n".format(resp_payload['interval'])
 
     for lname, ldata in resp_payload['lists'].iteritems():
@@ -131,4 +132,6 @@ def gethash_view(request):
 
 
 def newkey_view(request):
+    # Not implemented at the moment because Mozilla requires HTTPS for its
+    # hosting site.  As a result the implmementation has been delayed a bit.
     return HTTPNotImplemented()
