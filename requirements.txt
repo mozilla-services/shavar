@@ -1,12 +1,19 @@
-#boto==2.31.1
-heka-py==0.30.3
-heka-py-raven==0.7
 konfig==0.9
 nose==1.3.3
 Paste==1.7.5.1
 pyramid==1.5.1
 pyramid_chameleon==0.3
 pyramid_debugtoolbar==2.1
-raven==3.4.1
 statsd==3.0
 waitress==0.8.9
+#
+# Just until mozsvc 0.8 is released
+#
+#mozsvc==0.8
+https://github.com/mozilla-services/mozservices/archive/aed31bbe35544c0523e85d4488a8ea2705d0457f.zip
+#
+# mozsvc has some wonky issues with testing dependencies
+#
+WSGIProxy
+unittest2
+webtest
