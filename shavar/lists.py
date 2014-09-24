@@ -10,6 +10,9 @@ def includeme(config):
         raise ValueError("lists_served appears to be empty or missing "
                          "in the config \"%s\"!" % config.filename)
 
+    if type(lists_to_serve) == str:
+        lists_to_serve = [lists_to_serve]
+
     config.registry['shavar.serving'] = {}
 
     for lname in lists_to_serve:
