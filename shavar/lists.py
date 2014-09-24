@@ -1,7 +1,7 @@
 from urlparse import urlparse
 
 from shavar.exceptions import MissingListDataError
-from shavar.sources import FileSource
+from shavar.sources import FileSource, S3FileSource
 
 
 def includeme(config):
@@ -92,9 +92,12 @@ class SafeBrowsingList(object):
         self.settings = settings
         if (self.url.scheme == 'file' or
                 not (self.url.scheme and self.url.netloc)):
-            self._source = FileSource(self.source_url, self)
+            self._source = FileSource(self.source_url)
+        elif 's3+file' == self.url.scheme.lower():
+            self._source = S3FileSource(self.source_url)
         else:
-            raise Exception('Only filesystem access supported at this time')
+            raise ValueError('Only local single files and S3 single files '
+                             'sources supported at this time')
         self._source.load()
 
     def refresh(self):

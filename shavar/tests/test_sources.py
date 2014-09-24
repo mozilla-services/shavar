@@ -1,21 +1,16 @@
-import hashlib
 import tempfile
 import time
-import unittest
 
-from shavar.sources import FileSource
+import boto
+from boto.s3.key import Key
+from moto import mock_s3
+
+from shavar.sources import FileSource, S3FileSource
 from shavar.types import ChunkList
-from shavar.tests.base import simple_adds, simple_subs
+from shavar.tests.base import ShavarTestCase, simple_adds, simple_subs
 
 
-class FileSourceTest(unittest.TestCase):
-
-    hm = hashlib.sha256('https://www.mozilla.org/').digest()
-    hg = hashlib.sha256('https://www.google.com/').digest()
-    _d = ''.join([hm, hg])
-    add = "a:17:32:%d\n%s" % (len(_d), _d)
-    sub = "s:18:32:%d\n%s" % (len(_d), _d)
-    vals = {hm[:4]: [17], hg[:4]: [17]}
+class FileSourceTest(ShavarTestCase):
 
     def setUp(self):
         source = tempfile.NamedTemporaryFile(delete=False)
@@ -55,6 +50,44 @@ class FileSourceTest(unittest.TestCase):
         self.assertEqual(f.list_chunks(), (set([17]), set([18])))
 
 #    def test_fetch(self):
+#        vals = {self.hm[:4]: [17], self.hg[:4]: [17]}
 #        f = FileSource("file://" + self.source.name)
 #        f.load()
-#        self.assertEqual(f.fetch([17], [18]), self.vals)
+#        self.assertEqual(f.fetch([17], [18]), vals)
+
+
+class TestS3FileSource(ShavarTestCase):
+
+    # I have no idea where I came up with this name or what it might mean but
+    # it's keeper.
+    bucket_name = 'boost-a-nanny'
+    key_name = 'donkula'
+
+    def test_load(self):
+        with mock_s3():
+            conn = boto.connect_s3()
+            b = conn.create_bucket(self.bucket_name)
+            k = Key(b)
+            k.name = self.key_name
+            k.set_contents_from_string("%s\n%s" % (self.add, self.sub))
+
+            f = S3FileSource("s3+file://{0}/{1}".format(self.bucket_name,
+                                                        self.key_name))
+            f.load()
+            self.assertEqual(f.chunks, ChunkList(add_chunks=simple_adds,
+                                                 sub_chunks=simple_subs))
+
+    def test_refresh_check(self):
+        with mock_s3():
+            conn = boto.connect_s3()
+            b = conn.create_bucket(self.bucket_name)
+            k = Key(b)
+            k.name = self.key_name
+            k.set_contents_from_string("%s\n%s" % (self.add, self.sub))
+
+            f = S3FileSource("s3+file://{0}/{1}".format(self.bucket_name,
+                                                        self.key_name))
+            f.load()
+            # Change the content of the file to change the MD5 reported
+            k.set_contents_from_string("%s\n%s" % (self.sub, self.add))
+            self.assertTrue(f.needs_refresh())
