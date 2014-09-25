@@ -59,7 +59,7 @@ class FileSourceTest(ShavarTestCase):
 class TestS3FileSource(ShavarTestCase):
 
     # I have no idea where I came up with this name or what it might mean but
-    # it's keeper.
+    # it's a keeper.
     bucket_name = 'boost-a-nanny'
     key_name = 'donkula'
 
