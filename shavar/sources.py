@@ -1,6 +1,12 @@
 import os
+# posixpath instead of os.path because posixpath will always use / as the path
+# separator.  Basically a Windows portability consideration.
+import posixpath
+import tempfile
 import time
 from urlparse import urlparse
+
+from boto.s3.connection import S3Connection
 
 from shavar.exceptions import NoDataError, ParseError
 from shavar.parse import parse_file_source
@@ -24,10 +30,29 @@ class Source(object):
     def load(self):
         raise NotImplemented
 
+    def _populate_chunks(self, fp, parser_func):
+        try:
+            self.chunks = parser_func(fp)
+            self.last_check = int(time.time())
+            self.last_refresh = int(time.time())
+            self.chunk_index = {'adds': set(self.chunks.adds.keys()),
+                                'subs': set(self.chunks.subs.keys())}
+        except ParseError, e:
+            raise ParseError('Error parsing "%s": %s' % (self.url.path, e))
+
     def refresh(self):
-        raise NotImplemented
+        if self.needs_refresh():
+            self.last_check = int(time.time())
+        else:
+            self.load()
+
+    def needs_refresh(self):
+        return False
 
     def fetch(self, adds, subs):
+        if self.needs_refresh():
+            self.refresh()
+
         chunks = {'adds': [], 'subs': []}
         for chunk_num in adds:
             chunks['adds'].append(self.chunks.adds[chunk_num])
@@ -55,25 +80,49 @@ class FileSource(Source):
             raise NoDataError('Known list, no data found: "%s"'
                               % self.url.path)
 
-        try:
-            with open(self.url.path, 'rb') as f:
-                self.chunks = parse_file_source(f)
-                self.last_check = int(time.time())
-                self.last_refresh = int(time.time())
-                self.chunk_index = {'adds': set(self.chunks.adds.keys()),
-                                    'subs': set(self.chunks.subs.keys())}
-        except ParseError, e:
-            raise ParseError('Error parsing "%s": %s' % (self.url.path, e))
+        with open(self.url.path, 'rb') as f:
+            self._populate_chunks(f, parse_file_source)
 
-    def refresh(self):
+    def needs_refresh(self):
         # Prevent constant refresh checks
         if int(os.stat(self.url.path).st_mtime) <= self.last_refresh:
-            self.last_check = int(time.time())
             return False
-        self.load()
         return True
 
-    def fetch(self, adds=[], subs=[]):
-        if int(time.time()) - self.last_refresh > self.interval:
-            self.refresh()
-        return super(FileSource, self).fetch(adds, subs)
+
+class S3FileSource(Source):
+    """
+    Loads chunks from a single file in S3 in the on-the-wire format
+    """
+
+    def __init__(self, source_url, refresh_interval=12 * 60 * 60):
+        super(S3FileSource, self).__init__(source_url, refresh_interval)
+        self.current_md5 = None
+        # eliminate preceding slashes in the S3 key name
+        elems = list(posixpath.split(posixpath.normpath(self.url.path)))
+        while '/' == elems[0]:
+            elems.pop(0)
+        self.key_name = posixpath.join(*elems)
+
+    def _get_key(self):
+        bucket = S3Connection().get_bucket(self.url.netloc)
+        return bucket.get_key(self.key_name)
+
+    def load(self):
+        s3key = self._get_key()
+        if not s3key:
+            raise NoDataError('No chunk file found at "%s"' % self.source_url)
+
+        with tempfile.TemporaryFile() as fp:
+            s3key.get_contents_to_file(fp)
+            # Need to forcibly reset to the beginning of the file
+            fp.seek(0)
+            self._populate_chunks(fp, parse_file_source)
+            self.current_md5 = s3key.md5
+
+    def needs_refresh(self):
+        # Prevent constant refresh checks
+        s3key = self._get_key()
+        if s3key.md5 == self.current_md5:
+            return False
+        return True

@@ -81,6 +81,9 @@ class ShavarTestCase(TestCase):
 
     hm = hashes['moz']
     hg = hashes['goog']
+    _d = ''.join([hm, hg])
+    add = "a:17:32:%d\n%s" % (len(_d), _d)
+    sub = "s:18:32:%d\n%s" % (len(_d), _d)
 
     def setUp(self):
         self.maxDiff = None

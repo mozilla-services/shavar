@@ -1,7 +1,7 @@
 from urlparse import urlparse
 
 from shavar.exceptions import MissingListDataError
-from shavar.sources import FileSource
+from shavar.sources import FileSource, S3FileSource
 
 
 def includeme(config):
@@ -9,6 +9,9 @@ def includeme(config):
     if not lists_to_serve:
         raise ValueError("lists_served appears to be empty or missing "
                          "in the config \"%s\"!" % config.filename)
+
+    if isinstance(lists_to_serve, basestring):
+        lists_to_serve = [lists_to_serve]
 
     config.registry['shavar.serving'] = {}
 
@@ -87,11 +90,15 @@ class SafeBrowsingList(object):
         self.source_url = source_url
         self.url = urlparse(source_url)
         self.settings = settings
-        if (self.url.scheme == 'file' or
-                not (self.url.scheme and self.url.netloc)):
-            self._source = FileSource(self.source_url, self)
+
+        scheme = self.url.scheme.lower()
+        if (scheme == 'file' or not (self.url.scheme and self.url.netloc)):
+            self._source = FileSource(self.source_url)
+        elif scheme == 's3+file':
+            self._source = S3FileSource(self.source_url)
         else:
-            raise Exception('Only filesystem access supported at this time')
+            raise ValueError('Only local single files and S3 single files '
+                             'sources supported at this time')
         self._source.load()
 
     def refresh(self):
