@@ -1,4 +1,6 @@
 import os
+# posixpath instead of os.path because posixpath will always use / as the path
+# separator.  Basically a Windows portability consideration.
 import posixpath
 import tempfile
 import time
@@ -48,11 +50,10 @@ class Source(object):
         return False
 
     def fetch(self, adds, subs):
-        # If we haven't checked for a reload in a long while, do so now
-        if int(time.time()) - self.last_refresh > self.interval:
+        if self.needs_refresh():
             self.refresh()
-        chunks = {'adds': [], 'subs': []}
 
+        chunks = {'adds': [], 'subs': []}
         for chunk_num in adds:
             chunks['adds'].append(self.chunks.adds[chunk_num])
         for chunk_num in subs:
@@ -103,12 +104,12 @@ class S3FileSource(Source):
             elems.pop(0)
         self.key_name = posixpath.join(*elems)
 
-    def get_key(self):
+    def _get_key(self):
         bucket = S3Connection().get_bucket(self.url.netloc)
         return bucket.get_key(self.key_name)
 
     def load(self):
-        s3key = self.get_key()
+        s3key = self._get_key()
         if not s3key:
             raise NoDataError('No chunk file found at "%s"' % self.source_url)
 
@@ -121,7 +122,7 @@ class S3FileSource(Source):
 
     def needs_refresh(self):
         # Prevent constant refresh checks
-        s3key = self.get_key()
+        s3key = self._get_key()
         if s3key.md5 == self.current_md5:
             return False
         return True

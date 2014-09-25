@@ -90,10 +90,11 @@ class SafeBrowsingList(object):
         self.source_url = source_url
         self.url = urlparse(source_url)
         self.settings = settings
-        if (self.url.scheme == 'file' or
-                not (self.url.scheme and self.url.netloc)):
+
+        scheme = self.url.scheme.lower()
+        if (scheme == 'file' or not (self.url.scheme and self.url.netloc)):
             self._source = FileSource(self.source_url)
-        elif 's3+file' == self.url.scheme.lower():
+        elif scheme == 's3+file':
             self._source = S3FileSource(self.source_url)
         else:
             raise ValueError('Only local single files and S3 single files '
