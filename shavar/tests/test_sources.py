@@ -1,5 +1,5 @@
+import os
 import tempfile
-import time
 
 import boto
 from boto.s3.key import Key
@@ -39,8 +39,9 @@ class FileSourceTest(ShavarTestCase):
         self.source.write("%s\n%s" % (self.add, self.sub))
         self.source.flush()
         self.source.seek(0)
-        time.sleep(1)
-        self.assertTrue(f.refresh())
+        times = os.stat(self.source.name)
+        os.utime(self.source.name, (times.st_atime, times.st_mtime + 2))
+        self.assertTrue(f.needs_refresh())
 
     def test_list_chunks(self):
         f = FileSource("file://" + self.source.name, 1)
@@ -90,5 +91,4 @@ class TestS3FileSource(ShavarTestCase):
             f.load()
             # Change the content of the file to change the MD5 reported
             k.set_contents_from_string("%s\n%s" % (self.sub, self.add))
-            time.sleep(1)
-            self.assertTrue(f.refresh())
+            self.assertTrue(f.needs_refresh())
