@@ -16,7 +16,13 @@ def includeme(config):
     config.registry['shavar.serving'] = {}
 
     for lname in lists_to_serve:
+        # Make sure we have a refresh interval set for the data source for the
+        # lists
         settings = config.registry.settings.getsection(lname)
+        default = config.registry.settings.get('refresh_check_interval',
+                                               12 * 60 * 60)
+        if 'refresh_check_interval' not in settings:
+            settings['refresh_check_interval'] = default
 
         # defaults = config.get_map('shavar')
         # settings = {'type': 'shavar',
@@ -92,10 +98,13 @@ class SafeBrowsingList(object):
         self.settings = settings
 
         scheme = self.url.scheme.lower()
+        interval = settings.get('refresh_check_interval', 12 * 60 * 60)
         if (scheme == 'file' or not (self.url.scheme and self.url.netloc)):
-            self._source = FileSource(self.source_url)
+            self._source = FileSource(self.source_url,
+                                      refresh_interval=interval)
         elif scheme == 's3+file':
-            self._source = S3FileSource(self.source_url)
+            self._source = S3FileSource(self.source_url,
+                                        refresh_interval=interval)
         else:
             raise ValueError('Only local single files and S3 single files '
                              'sources supported at this time')

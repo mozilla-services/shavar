@@ -1,5 +1,5 @@
+import os
 import tempfile
-import time
 
 import boto
 from boto.s3.key import Key
@@ -25,27 +25,26 @@ class FileSourceTest(ShavarTestCase):
         del self.source
 
     def test_load(self):
-        f = FileSource("file://" + self.source.name)
+        f = FileSource("file://" + self.source.name, 1)
         f.load()
         self.assertEqual(f.chunks, ChunkList(add_chunks=simple_adds,
                                              sub_chunks=simple_subs))
 
     def test_refresh(self):
         # FIXME Timing issues causing intermittent failures.
-        if 0:
-            f = FileSource("file://" + self.source.name,
-                           refresh_interval=0.1)
-            f.load()
-            self.assertFalse(f.refresh())
-            self.source.seek(0)
-            self.source.write("%s\n%s" % (self.add, self.sub))
-            self.source.flush()
-            self.source.seek(0)
-            time.sleep(1)
-            self.assertTrue(f.refresh())
+        f = FileSource("file://" + self.source.name, 0.5)
+        f.load()
+        self.assertFalse(f.refresh())
+        self.source.seek(0)
+        self.source.write("%s\n%s" % (self.add, self.sub))
+        self.source.flush()
+        self.source.seek(0)
+        times = os.stat(self.source.name)
+        os.utime(self.source.name, (times.st_atime, times.st_mtime + 2))
+        self.assertTrue(f.needs_refresh())
 
     def test_list_chunks(self):
-        f = FileSource("file://" + self.source.name)
+        f = FileSource("file://" + self.source.name, 1)
         f.load()
         self.assertEqual(f.list_chunks(), (set([17]), set([18])))
 
@@ -72,12 +71,13 @@ class TestS3FileSource(ShavarTestCase):
             k.set_contents_from_string("%s\n%s" % (self.add, self.sub))
 
             f = S3FileSource("s3+file://{0}/{1}".format(self.bucket_name,
-                                                        self.key_name))
+                                                        self.key_name),
+                             0.5)
             f.load()
             self.assertEqual(f.chunks, ChunkList(add_chunks=simple_adds,
                                                  sub_chunks=simple_subs))
 
-    def test_refresh_check(self):
+    def test_refresh(self):
         with mock_s3():
             conn = boto.connect_s3()
             b = conn.create_bucket(self.bucket_name)
@@ -86,7 +86,8 @@ class TestS3FileSource(ShavarTestCase):
             k.set_contents_from_string("%s\n%s" % (self.add, self.sub))
 
             f = S3FileSource("s3+file://{0}/{1}".format(self.bucket_name,
-                                                        self.key_name))
+                                                        self.key_name),
+                             0.5)
             f.load()
             # Change the content of the file to change the MD5 reported
             k.set_contents_from_string("%s\n%s" % (self.sub, self.add))

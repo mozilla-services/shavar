@@ -17,7 +17,7 @@ class Source(object):
     Base class for data sources
     """
 
-    def __init__(self, source_url, refresh_interval=12 * 60 * 60):
+    def __init__(self, source_url, refresh_interval):
         self.source_url = source_url
         self.url = urlparse(self.source_url)
         self.interval = refresh_interval
@@ -41,17 +41,20 @@ class Source(object):
             raise ParseError('Error parsing "%s": %s' % (self.url.path, e))
 
     def refresh(self):
-        if self.needs_refresh():
-            self.last_check = int(time.time())
-        else:
-            self.load()
+        # Prevent constant refresh checks
+        now = int(time.time())
+        if now - self.interval >= self.last_check:
+            self.last_check = now
+            if self.needs_refresh():
+                self.load()
+                return True
+        return False
 
     def needs_refresh(self):
         return False
 
     def fetch(self, adds, subs):
-        if self.needs_refresh():
-            self.refresh()
+        self.refresh()
 
         chunks = {'adds': [], 'subs': []}
         for chunk_num in adds:
@@ -61,6 +64,7 @@ class Source(object):
         return chunks
 
     def list_chunks(self):
+        self.refresh()
         return (self.chunk_index['adds'], self.chunk_index['subs'])
 
     def find_prefix(self, prefix):
@@ -84,7 +88,6 @@ class FileSource(Source):
             self._populate_chunks(f, parse_file_source)
 
     def needs_refresh(self):
-        # Prevent constant refresh checks
         if int(os.stat(self.url.path).st_mtime) <= self.last_refresh:
             return False
         return True
@@ -95,7 +98,7 @@ class S3FileSource(Source):
     Loads chunks from a single file in S3 in the on-the-wire format
     """
 
-    def __init__(self, source_url, refresh_interval=12 * 60 * 60):
+    def __init__(self, source_url, refresh_interval):
         super(S3FileSource, self).__init__(source_url, refresh_interval)
         self.current_md5 = None
         # eliminate preceding slashes in the S3 key name
@@ -121,7 +124,6 @@ class S3FileSource(Source):
             self.current_md5 = s3key.md5
 
     def needs_refresh(self):
-        # Prevent constant refresh checks
         s3key = self._get_key()
         if s3key.md5 == self.current_md5:
             return False
