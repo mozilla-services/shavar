@@ -29,6 +29,7 @@ lists_root = tests
 [mozpub-track-digest256]
 type = digest256
 source = {source}
+not_publishing_deltas = {deltas}
 
 [moz-abp-shavar]
 type = shavar

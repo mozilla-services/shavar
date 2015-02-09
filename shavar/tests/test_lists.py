@@ -20,7 +20,7 @@ class ListsTest(unittest.TestCase):
     def _config(self, fname='chunk_source'):
         conf = tempfile.NamedTemporaryFile()
         source = test_file(fname)
-        conf.write(conf_tmpl.format(source=source))
+        conf.write(conf_tmpl.format(source=source, deltas=False))
         conf.flush()
         conf.seek(0)
         self.config = testing.setUp()
