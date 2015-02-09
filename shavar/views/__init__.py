@@ -88,6 +88,15 @@ def format_downloads(request, resp_payload):
 
     for lname, ldata in resp_payload['lists'].iteritems():
         body += "i:%s\n" % lname
+
+        # Not publishing deltas for this list?  Delete all previous chunks to
+        # make way for the new corpus
+        if (_setting(request, lname, 'not_publishing_deltas')
+                and len(ldata['adds']) == 1
+                and len(ldata['subs']) == 0):
+            number = ldata['adds'][0].number
+            body += "ad:1-{number}\n".format(number=number - 1)
+
         # TODO  Should we prioritize subs over adds?
         for chunk in chain(ldata['adds'], ldata['subs']):
             # digest256 lists don't use URL redirects for data.  They simply

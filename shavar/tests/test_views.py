@@ -65,3 +65,24 @@ class DeltaViewTests(ShavarTestCase):
         request = dummy(body, path='/gethash')
         response = gethash_view(request)
         self.assertEqual(response.body, expected)
+
+
+class NoDeltaViewTests(ShavarTestCase):
+
+    ini_file = 'tests_no_delta.ini'
+
+    def test_2_downloads_view(self):
+        from shavar.views import downloads_view
+
+        req = "mozpub-track-digest256;a:1-2:s:6"
+        expected = "n:2700\n" \
+                   "i:mozpub-track-digest256\n" \
+                   "ad:1-16\n" \
+                   "a:17:32:64\n" \
+                   "\xd0\xe1\x96\xa0\xc2]5\xdd\n\x84Y<\xba\xe0\xf3\x833\xaaXR" \
+                   "\x996DN\xa2dS\xea\xb2\x8d\xfc\x86\xfdm~\xb5\xf82\x1f\x8a" \
+                   "\xden)\\;RW\xcaK\xb0\x90V1Z\x0bz\xe3?\xf6\x00\x81g\xcd\x97"
+
+        request = dummy(req, path='/downloads')
+        response = downloads_view(request)
+        self.assertEqual(response.body, expected)
