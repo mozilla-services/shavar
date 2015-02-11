@@ -1,22 +1,26 @@
 import hashlib
 import StringIO
-import unittest
 
 from shavar.parse import parse_downloads, parse_gethash, parse_file_source
-from shavar.types import ChunkList, Chunk, Downloads, DownloadsListInfo
+from shavar.types import (
+    Chunk,
+    ChunkList,
+    Downloads,
+    DownloadsListInfo,
+    LimitExceededError)
 from shavar.tests.base import (
     dummy,
     hashes,
-    test_file)
+    test_file,
+    ShavarTestCase)
 
 
-class ParseTest(unittest.TestCase):
+class ParseTest(ShavarTestCase):
+
+    ini_file = 'tests.ini'
 
     hg = hashes['goog']
     hm = hashes['moz']
-
-    def setUp(self):
-        self.maxDiff = None
 
     def test_parse_download(self):
         """
@@ -106,7 +110,11 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(p, d)
 
     def test_parse_download_errors(self):
-        pass
+        self.assertRaises(LimitExceededError, parse_downloads,
+                          dummy("mozpub-track-digest256;a:1-20000"))
+
+        self.assertRaises(LimitExceededError, parse_downloads,
+                          dummy("mozpub-track-digest256;a:1-1002"))
 
     def test_parse_gethash(self):
         h = "4:32\n"

@@ -101,19 +101,44 @@ class Downloads(list):
         return True
 
 
+class LimitExceededError(Exception):
+    """
+    Raised when a /downloads request would exceed the limit of the number
+    of chunks for a given request
+    """
+
+
 class DownloadsListInfo(object):
 
-    def __init__(self, list_name, wants_mac=False, adds=[], subs=[]):
+    def __init__(self, list_name, wants_mac=False, adds=[], subs=[],
+                 limit=10 * 1000):
         self.name = list_name
         self.wants_mac = wants_mac
+        self.limit = limit
+        if len(adds) > self.limit:
+            raise LimitExceededError("Number of add chunks(%d) exceeds limit:"
+                                     " %d" % (len(adds), self.limit))
         self.adds = set(adds)
+        if len(subs) > self.limit:
+            raise LimitExceededError("Number of sub chunks(%d) exceeds limit:"
+                                     " %d" % (len(subs), self.limit))
         self.subs = set(subs)
 
     def add_claim(self, typ, chunk_num):
+        # We do bounds checking after the fact because sets only store unique
+        # items and don't duplicate
         if typ == 's':
             self.subs.add(chunk_num)
+            if len(self.subs) > self.limit:
+                raise LimitExceededError("Number of sub chunks(%d) exceeds"
+                                         " limit: %d" % (len(self.subs),
+                                                         self.limit))
         else:
             self.adds.add(chunk_num)
+            if len(self.adds) > self.limit:
+                raise LimitExceededError("Number of add chunks(%d) exceeds"
+                                         " limit: %d" % (len(self.adds),
+                                                         self.limit))
 
     def add_range_claim(self, typ, low, high):
         for i in xrange(low, high + 1):

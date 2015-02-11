@@ -5,6 +5,9 @@ from shavar.types import Chunk, ChunkList, Downloads, DownloadsListInfo
 def parse_downloads(request):
     parsed = Downloads()
 
+    limit = request.registry.settings.get("shavar.max_downloads_chunks",
+                                          10000)
+
     for lineno, line in enumerate(request.body_file):
         line = line.strip()
 
@@ -26,7 +29,7 @@ def parse_downloads(request):
             continue
 
         lname, chunklist = line.split(";", 2)
-        info = DownloadsListInfo(lname)
+        info = DownloadsListInfo(lname, limit=limit)
 
         chunks = chunklist.split(":")
         # Check for MAC
