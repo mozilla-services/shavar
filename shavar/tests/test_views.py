@@ -75,10 +75,10 @@ class NoDeltaViewTests(ShavarTestCase):
     def test_2_downloads_view(self):
         from shavar.views import downloads_view
 
-        req = "mozpub-track-digest256;a:1-2:s:6"
+        req = "mozpub-track-digest256;a:1-2,7,9-14,16:s:6"
         expected = "n:2700\n" \
                    "i:mozpub-track-digest256\n" \
-                   "ad:1-16\n" \
+                   "ad:1,2,7,9,10,11,12,13,14,16\n" \
                    "a:17:32:64\n" \
                    "\xd0\xe1\x96\xa0\xc2]5\xdd\n\x84Y<\xba\xe0\xf3\x833\xaaX" \
                    "R\x996DN\xa2dS\xea\xb2\x8d\xfc\x86\xfdm~\xb5\xf82\x1f" \
