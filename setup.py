@@ -12,7 +12,7 @@ with open(os.path.join(here, 'requirements.txt')) as f:
 
 
 setup(name='shavar',
-      version='0.1',
+      version='0.6',
       description='shavar',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
