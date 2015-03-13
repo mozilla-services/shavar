@@ -105,10 +105,10 @@ def format_downloads(request, resp_payload):
 
         # Chunk deletion commands come first
         if 'adddels' in ldata:
-            dels = ','.join(['%d' % num for num in ldata['adddels']])
+            dels = ','.join(['{0}'.format(num) for num in ldata['adddels']])
             body += 'ad:{0}\n'.format(dels)
         if 'subdels' in ldata:
-            dels = ','.join(['%d' % num for num in ldata['subdels']])
+            dels = ','.join(['{0}'.format(num) for num in ldata['subdels']])
             body += 'sd:{0}\n'.format(dels)
 
         # TODO  Should we prioritize subs over adds?
