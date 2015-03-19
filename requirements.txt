@@ -13,5 +13,7 @@ mozsvc==0.8
 # mozsvc has some wonky issues with testing dependencies
 #
 WSGIProxy
-unittest2
+# unittest v1.0.0 and v1.0.1 have a dependency on linecache2.  linecache2 is
+# currently experiencing syntax errors when you attempt to install it.
+unittest2==0.8.0
 webtest
