@@ -66,6 +66,11 @@ class DeltaViewTests(ShavarTestCase):
         request = dummy(body, path='/gethash')
         response = gethash_view(request)
         self.assertEqual(response.body, expected)
+        # Make sure we return a 204 No Content for a prefix that doesn't map
+        # to a hash we're serving
+        request = dummy("4:4\n\x00\x00\x00\x00", path='/gethash')
+        response = gethash_view(request)
+        self.assertEqual(response.code, 204)
 
 
 class NoDeltaViewTests(ShavarTestCase):
