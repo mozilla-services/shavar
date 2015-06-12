@@ -137,6 +137,7 @@ class ParseTest(ShavarTestCase):
         # prefix
         s = "4:4\n\xdd\x01J\xf5"
         p = parse_gethash(dummy(s, path="/gethash"))
+        self.assertEqual(p, set(["\xdd\x01J\xf5"]))
 
     def test_parse_gethash_errors(self):
         # Too short
