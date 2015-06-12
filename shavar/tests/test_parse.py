@@ -1,6 +1,7 @@
 import hashlib
 import StringIO
 
+from shavar.exceptions import ParseError
 from shavar.parse import parse_downloads, parse_gethash, parse_file_source
 from shavar.types import (
     Chunk,
@@ -132,9 +133,43 @@ class ParseTest(ShavarTestCase):
             s += i
         p = parse_gethash(dummy(s, path="/gethash"))
         self.assertEqual(p, set(d))
+        # Make sure no repeats of issue #32 pop up: test with a single hash
+        # prefix
+        s = "4:4\n\xdd\x01J\xf5"
+        p = parse_gethash(dummy(s, path="/gethash"))
+        self.assertEqual(p, set(["\xdd\x01J\xf5"]))
 
     def test_parse_gethash_errors(self):
-        pass
+        # Too short
+        with self.assertRaises(ParseError) as ecm:
+            parse_gethash(dummy("4:\n"))
+        self.assertEqual(str(ecm.exception),
+                         "Improbably small or large gethash header size: 2")
+        # Too long
+        with self.assertRaises(ParseError) as ecm:
+            parse_gethash(dummy("4:" + "1" * 256 + "\n"))
+        self.assertEqual(str(ecm.exception),
+                         "Improbably small or large gethash header size: 258")
+        # Invalid sizes
+        with self.assertRaises(ParseError) as ecm:
+            parse_gethash(dummy("steve:4\n"))
+        self.assertEqual(str(ecm.exception),
+                         'Invalid prefix or payload size: "steve:4\n"')
+        with self.assertRaises(ParseError) as ecm:
+            parse_gethash(dummy("4:steve\n"))
+        self.assertEqual(str(ecm.exception),
+                         'Invalid prefix or payload size: "4:steve\n"')
+        # Improper payload length
+        with self.assertRaises(ParseError) as ecm:
+            parse_gethash(dummy("4:17\n"))
+        self.assertEqual(str(ecm.exception),
+                         'Payload length invalid: "17"')
+        # It seems some clients are hitting the gethash endpoint with a
+        # request intended for the downloads endpoint
+        with self.assertRaises(ParseError) as ecm:
+            parse_gethash(dummy("mozpub-track-digest256;a:1423242002"))
+        self.assertEqual(str(ecm.exception),
+                         "Improbably small or large gethash header size: -1")
 
     def test_parse_file_source(self):
         d = ''.join([self.hm, self.hg])

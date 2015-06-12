@@ -6,10 +6,12 @@ from mozsvc.metrics import annotate_request
 
 from pyramid.httpexceptions import (
     HTTPBadRequest,
+    HTTPNoContent,
     HTTPNotImplemented,
     HTTPOk,
     HTTPInternalServerError)
 
+from shavar.exceptions import ParseError
 from shavar.lists import get_list, lookup_prefixes
 from shavar.parse import parse_downloads, parse_gethash
 
@@ -139,8 +141,17 @@ def format_downloads(request, resp_payload):
 # gethash
 #
 def gethash_view(request):
-    parsed = parse_gethash(request)
+    try:
+        parsed = parse_gethash(request)
+    except ParseError, e:
+        annotate_request(request, "shavar.gethash.unknown.format", 1)
+        raise HTTPBadRequest(str(e))
+
     full = lookup_prefixes(request, parsed)
+
+    # Nothing found?  Return a 204
+    if len(full) == 0:
+        return HTTPNoContent()
 
     # FIXME MAC handling
     body = ''

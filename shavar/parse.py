@@ -89,7 +89,7 @@ def parse_gethash(request):
     # of 2**8 bytes and a minimum of 3("4:4", a single prefix).  256 is
     # probably waaaaaaaaaaay too large for a gethash request header.
     eoh = request.body.find('\n')
-    if eoh <= 3 or eoh >= 256:
+    if eoh < 3 or eoh >= 256:
         raise ParseError("Improbably small or large gethash header size: %d"
                          % eoh)
 
@@ -102,7 +102,7 @@ def parse_gethash(request):
     except ValueError:
         raise ParseError('Invalid prefix or payload size: "%s"' % header)
     if payload_len % prefix_len != 0:
-        raise ParseError("Body length invalid: \"%d\"" % payload_len)
+        raise ParseError("Payload length invalid: \"%d\"" % payload_len)
 
     prefix_total = payload_len / prefix_len
     prefixes_read = 0
