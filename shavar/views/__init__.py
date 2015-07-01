@@ -106,10 +106,10 @@ def format_downloads(request, resp_payload):
         body += "i:%s\n" % lname
 
         # Chunk deletion commands come first
-        if 'adddels' in ldata:
+        if 'adddels' in ldata and ldata['adddels']:
             dels = ','.join(['{0}'.format(num) for num in ldata['adddels']])
             body += 'ad:{0}\n'.format(dels)
-        if 'subdels' in ldata:
+        if 'subdels' in ldata and ldata['subdels']:
             dels = ','.join(['{0}'.format(num) for num in ldata['subdels']])
             body += 'sd:{0}\n'.format(dels)
 

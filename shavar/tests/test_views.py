@@ -93,3 +93,19 @@ class NoDeltaViewTests(ShavarTestCase):
         request = dummy(req, path='/downloads')
         response = downloads_view(request)
         self.assertEqual(response.body, expected)
+
+        # New downloads request means there should be no adddel or subdel
+        # entries in the response even if not_publishing_deltas is enabled
+        # for the list.
+        req = "mozpub-track-digest256;"
+        expected = "n:2700\n" \
+                   "i:mozpub-track-digest256\n" \
+                   "a:17:32:64\n" \
+                   "\xd0\xe1\x96\xa0\xc2]5\xdd\n\x84Y<\xba\xe0\xf3\x833\xaaX" \
+                   "R\x996DN\xa2dS\xea\xb2\x8d\xfc\x86\xfdm~\xb5\xf82\x1f" \
+                   "\x8a\xden)\\;RW\xcaK\xb0\x90V1Z\x0bz\xe3?\xf6\x00\x81g" \
+                   "\xcd\x97"
+
+        request = dummy(req, path='/downloads')
+        response = downloads_view(request)
+        self.assertEqual(response.body, expected)
