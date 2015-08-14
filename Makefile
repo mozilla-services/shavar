@@ -13,7 +13,7 @@ NOSETESTS ?= ./bin/nosetests
 all:	build
 
 build:
-	$(VIRTUALENV) --no-site-packages --distribute ./local
+	$(VIRTUALENV) --no-site-packages --distribute .
 	$(INSTALL) Distribute
 	$(INSTALL) pip
 	$(INSTALL) nose
