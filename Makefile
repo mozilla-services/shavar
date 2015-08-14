@@ -1,19 +1,19 @@
 VIRTUALENV = virtualenv
-PYTHON = local/bin/python
-PIP = local/bin/pip
+PYTHON = bin/python
+PIP = bin/pip
 PIP_CACHE = /tmp/pip-cache.${USER}
 BUILD_TMP = /tmp/syncstorage-build.${USER}
 PYPI = https://pypi.python.org/simple
 INSTALL = $(PIP) install -U -i $(PYPI)
-FLAKE8 ?= ./local/bin/flake8
-NOSETESTS ?= ./local/bin/nosetests
+FLAKE8 ?= ./bin/flake8
+NOSETESTS ?= ./bin/nosetests
 
 .PHONY: all build test
 
 all:	build
 
 build:
-	$(VIRTUALENV) --no-site-packages --distribute ./local
+	$(VIRTUALENV) --no-site-packages --distribute .
 	$(INSTALL) Distribute
 	$(INSTALL) pip
 	$(INSTALL) nose
