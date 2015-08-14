@@ -43,7 +43,7 @@ Basic configuration consists of specifying the names of the lists to be served
 and a section for each of those lists declaring at least the two minimum
 required configuration directives for each list.
 
-A comment example configuration::
+A commented example configuration::
 
     [shavar]
     # A newline separated list of the lists to be served.  The names given
