@@ -21,7 +21,8 @@ logger = logging.getLogger('shavar')
 
 def includeme(config):
     config.add_route('list', '/list')
-    config.add_view(list_view, route_name='list', request_method='GET')
+    config.add_view(list_view, route_name='list', request_method=('GET',
+                                                                  'POST'))
 
     config.add_route('downloads', '/downloads')
     config.add_view(downloads_view, route_name='downloads',
