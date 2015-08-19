@@ -40,7 +40,7 @@ def _setting(request, section, key, default=None):
 
 
 def list_view(request):
-    lists = _setting(request, 'shavar', 'lists_served', tuple())
+    lists = sorted(request.registry['shavar.serving'].keys())
 
     body = '\n'.join(lists) + '\n'
     return HTTPOk(content_type='text/plain', body=body)
