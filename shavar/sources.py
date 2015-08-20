@@ -100,7 +100,7 @@ class S3FileSource(Source):
 
     def __init__(self, source_url, refresh_interval):
         super(S3FileSource, self).__init__(source_url, refresh_interval)
-        self.current_md5 = None
+        self.current_etag = None
         # eliminate preceding slashes in the S3 key name
         elems = list(posixpath.split(posixpath.normpath(self.url.path)))
         while '/' == elems[0]:
@@ -121,10 +121,10 @@ class S3FileSource(Source):
             # Need to forcibly reset to the beginning of the file
             fp.seek(0)
             self._populate_chunks(fp, parse_file_source)
-            self.current_md5 = s3key.md5
+            self.current_etag = s3key.etag
 
     def needs_refresh(self):
         s3key = self._get_key()
-        if s3key.md5 == self.current_md5:
+        if s3key.etag == self.current_etag:
             return False
         return True

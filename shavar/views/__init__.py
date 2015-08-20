@@ -21,7 +21,8 @@ logger = logging.getLogger('shavar')
 
 def includeme(config):
     config.add_route('list', '/list')
-    config.add_view(list_view, route_name='list', request_method='GET')
+    config.add_view(list_view, route_name='list', request_method=('GET',
+                                                                  'POST'))
 
     config.add_route('downloads', '/downloads')
     config.add_view(downloads_view, route_name='downloads',
@@ -39,7 +40,7 @@ def _setting(request, section, key, default=None):
 
 
 def list_view(request):
-    lists = _setting(request, 'shavar', 'lists_served', tuple())
+    lists = sorted(request.registry['shavar.serving'].keys())
 
     body = '\n'.join(lists) + '\n'
     return HTTPOk(content_type='text/plain', body=body)
@@ -50,7 +51,11 @@ def downloads_view(request):
                                          45 * 60),
                     'lists': {}}
 
-    parsed = parse_downloads(request)
+    try:
+        parsed = parse_downloads(request)
+    except ParseError, e:
+        logger.error(e)
+        raise HTTPBadRequest(e)
 
     for list_info in parsed:
         # Do we even serve that list?

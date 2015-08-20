@@ -29,6 +29,8 @@ def parse_downloads(request):
             continue
 
         lname, chunklist = line.split(";", 2)
+        if not lname or '-' not in lname:
+            raise ParseError("Invalid list name: \"%s\"" % lname)
         info = DownloadsListInfo(lname, limit=limit)
 
         chunks = chunklist.split(":")
