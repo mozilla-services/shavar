@@ -51,7 +51,11 @@ def downloads_view(request):
                                          45 * 60),
                     'lists': {}}
 
-    parsed = parse_downloads(request)
+    try:
+        parsed = parse_downloads(request)
+    except ParseError, e:
+        logger.error(e)
+        raise HTTPBadRequest(e)
 
     for list_info in parsed:
         # Do we even serve that list?
