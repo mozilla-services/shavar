@@ -11,7 +11,7 @@ from pyramid.httpexceptions import (
     HTTPOk,
     HTTPInternalServerError)
 
-from shavar.exceptions import ParseError
+from shavar.exceptions import ConfigurationError, ParseError
 from shavar.lists import get_list, lookup_prefixes
 from shavar.parse import parse_downloads, parse_gethash
 
@@ -47,9 +47,21 @@ def list_view(request):
 
 
 def downloads_view(request):
-    resp_payload = {'interval': _setting(request, 'shavar', 'default_interval',
-                                         45 * 60),
-                    'lists': {}}
+
+    # Use the new config variable name but support the old one for
+    default_interval = _setting(request, 'shavar', 'default_interval', None)
+    backoff_delay = _setting(request, 'shavar', 'client_backoff_delay', None)
+
+    # Throw a fit if both are specified
+    if default_interval is not None and backoff_delay is not None:
+        raise ConfigurationError("Specify either default_interval or "
+                                 "client_backoff_delay in the [shavar] "
+                                 "section of your config but not both.\n"
+                                 "client_backoff_delay is preferred.")
+
+    delay = backoff_delay or default_interval or 45 * 60
+
+    resp_payload = {'interval': delay, 'lists': {}}
 
     try:
         parsed = parse_downloads(request)

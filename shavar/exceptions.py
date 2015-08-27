@@ -12,3 +12,7 @@ class ParseError(BaseError):
 
 class MissingListDataError(BaseError):
     "Raised when we don't know about a list"
+
+
+class ConfigurationError(BaseError):
+    "Raised when the configuration makes no sense."
