@@ -59,7 +59,7 @@ def downloads_view(request):
                                  "section of your config but not both.\n"
                                  "client_backoff_delay is preferred.")
 
-    delay = backoff_delay or default_interval or 45 * 60
+    delay = backoff_delay or default_interval or 30 * 60
 
     resp_payload = {'interval': delay, 'lists': {}}
 
