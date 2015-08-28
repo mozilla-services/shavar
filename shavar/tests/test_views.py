@@ -50,6 +50,22 @@ class DeltaViewTests(ShavarTestCase):
         response = downloads_view(request)
         self.assertEqual(response.body, expected)
 
+        # Make sure redirects on an empty list are working correctly
+        baseurl = "tracking.services.mozilla.com/test-redir-digest256"
+        req = "test-redir-digest256;"
+        expected = "n:2700\n" \
+                   "i:test-redir-digest256\n" \
+                   "u:{baseurl}/1\n" \
+                   "u:{baseurl}/2\n" \
+                   "u:{baseurl}/4\n" \
+                   "u:{baseurl}/5\n" \
+                   "u:{baseurl}/3\n" \
+                   "u:{baseurl}/6\n".format(baseurl=baseurl)
+
+        request = dummy(req, path='/downloads')
+        response = downloads_view(request)
+        self.assertEqual(response.body, expected)
+
     def test_2_gethash_view(self):
         from shavar.views import gethash_view
         prefixes = "\xd0\xe1\x96\xa0" \

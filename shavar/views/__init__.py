@@ -120,6 +120,11 @@ def format_downloads(request, resp_payload):
     body = "n:{0}\n".format(resp_payload['interval'])
 
     for lname, ldata in resp_payload['lists'].iteritems():
+        # Support for the previous, broken method of responding to
+        # digest256 type lists
+        be_broken = _setting(request, lname,
+                             "sending_data_inline_is_a_bad_idea_but_do_"
+                             "it_for_this_list", False)
         body += "i:%s\n" % lname
 
         # Chunk deletion commands come first
@@ -132,24 +137,20 @@ def format_downloads(request, resp_payload):
 
         # TODO  Should we prioritize subs over adds?
         for chunk in chain(ldata['adds'], ldata['subs']):
-            # digest256 lists don't use URL redirects for data.  They simply
-            # include the data inline in the response
-            if ldata['type'] == 'digest256':
+            if be_broken:
                 d = ''.join(chunk.hashes)
                 data = "{type}:{chunk_num}:{hash_len}:{payload_len}\n" \
                        "{payload}".format(type=chunk.type,
                                           chunk_num=chunk.number,
                                           hash_len=chunk.hash_len,
                                           payload_len=len(d), payload=d)
-            elif ldata['type'] == 'shavar':
-                fudge = os.path.join(_setting(request, lname,
-                                              'redirect_url_base'),
-                                     lname, "%d" % chunk.number)
-                data = 'u:{0}\n'.format(fudge)
             else:
-                s = 'unsupported list type "%s" for "%s"' % (lname,
-                                                             ldata['type'])
-                logger.error(s)
+                baseurl = _setting(request, lname, 'redirect_url_base')
+                # Grab the default from the app
+                if not baseurl:
+                    baseurl = _setting(request, 'shavar', 'redirect_url_base')
+                fudge = os.path.join(baseurl, lname, "%d" % chunk.number)
+                data = 'u:{0}\n'.format(fudge)
             body += data
     return body
 
