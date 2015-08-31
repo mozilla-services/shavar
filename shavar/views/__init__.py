@@ -11,7 +11,7 @@ from pyramid.httpexceptions import (
     HTTPOk,
     HTTPInternalServerError)
 
-from shavar.exceptions import ParseError
+from shavar.exceptions import ConfigurationError, ParseError
 from shavar.lists import get_list, lookup_prefixes
 from shavar.parse import parse_downloads, parse_gethash
 
@@ -47,9 +47,21 @@ def list_view(request):
 
 
 def downloads_view(request):
-    resp_payload = {'interval': _setting(request, 'shavar', 'default_interval',
-                                         45 * 60),
-                    'lists': {}}
+
+    # Use the new config variable name but support the old one for
+    default_interval = _setting(request, 'shavar', 'default_interval', None)
+    backoff_delay = _setting(request, 'shavar', 'client_backoff_delay', None)
+
+    # Throw a fit if both are specified
+    if default_interval is not None and backoff_delay is not None:
+        raise ConfigurationError("Specify either default_interval or "
+                                 "client_backoff_delay in the [shavar] "
+                                 "section of your config but not both.\n"
+                                 "client_backoff_delay is preferred.")
+
+    delay = backoff_delay or default_interval or 30 * 60
+
+    resp_payload = {'interval': delay, 'lists': {}}
 
     try:
         parsed = parse_downloads(request)
@@ -108,6 +120,11 @@ def format_downloads(request, resp_payload):
     body = "n:{0}\n".format(resp_payload['interval'])
 
     for lname, ldata in resp_payload['lists'].iteritems():
+        # Support for the previous, broken method of responding to
+        # digest256 type lists
+        be_broken = _setting(request, lname,
+                             "sending_data_inline_is_a_bad_idea_but_do_"
+                             "it_for_this_list", False)
         body += "i:%s\n" % lname
 
         # Chunk deletion commands come first
@@ -120,24 +137,20 @@ def format_downloads(request, resp_payload):
 
         # TODO  Should we prioritize subs over adds?
         for chunk in chain(ldata['adds'], ldata['subs']):
-            # digest256 lists don't use URL redirects for data.  They simply
-            # include the data inline in the response
-            if ldata['type'] == 'digest256':
+            if be_broken:
                 d = ''.join(chunk.hashes)
                 data = "{type}:{chunk_num}:{hash_len}:{payload_len}\n" \
                        "{payload}".format(type=chunk.type,
                                           chunk_num=chunk.number,
                                           hash_len=chunk.hash_len,
                                           payload_len=len(d), payload=d)
-            elif ldata['type'] == 'shavar':
-                fudge = os.path.join(_setting(request, lname,
-                                              'redirect_url_base'),
-                                     lname, "%d" % chunk.number)
-                data = 'u:{0}\n'.format(fudge)
             else:
-                s = 'unsupported list type "%s" for "%s"' % (lname,
-                                                             ldata['type'])
-                logger.error(s)
+                baseurl = _setting(request, lname, 'redirect_url_base')
+                # Grab the default from the app
+                if not baseurl:
+                    baseurl = _setting(request, 'shavar', 'redirect_url_base')
+                fudge = os.path.join(baseurl, lname, "%d" % chunk.number)
+                data = 'u:{0}\n'.format(fudge)
             body += data
     return body
 
