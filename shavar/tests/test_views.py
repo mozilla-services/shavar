@@ -26,7 +26,7 @@ class DeltaViewTests(ShavarTestCase):
         from shavar.views import downloads_view
         req = "moz-abp-shavar;a:1-2,5:s:3\n"
         req += "mozpub-track-digest256;a:1-2:s:6"
-        expected = "n:2700\n" \
+        expected = "n:1800\n" \
                    "i:mozpub-track-digest256\n" \
                    "a:4:32:64\n" \
                    "\xd9\xa7\xffA\xe0\xd8\x92\xbe\x17\xb3\xc3\x04\xf3fA\xf4:" \
@@ -53,7 +53,7 @@ class DeltaViewTests(ShavarTestCase):
         # Make sure redirects on an empty list are working correctly
         baseurl = "tracking.services.mozilla.com/test-redir-digest256"
         req = "test-redir-digest256;"
-        expected = "n:2700\n" \
+        expected = "n:1800\n" \
                    "i:test-redir-digest256\n" \
                    "u:{baseurl}/1\n" \
                    "u:{baseurl}/2\n" \
@@ -97,7 +97,7 @@ class NoDeltaViewTests(ShavarTestCase):
         from shavar.views import downloads_view
 
         req = "mozpub-track-digest256;a:1-2,7,9-14,16:s:6"
-        expected = "n:2700\n" \
+        expected = "n:1800\n" \
                    "i:mozpub-track-digest256\n" \
                    "ad:1,2,7,9,10,11,12,13,14,16\n" \
                    "a:17:32:64\n" \
@@ -114,7 +114,7 @@ class NoDeltaViewTests(ShavarTestCase):
         # entries in the response even if not_publishing_deltas is enabled
         # for the list.
         req = "mozpub-track-digest256;"
-        expected = "n:2700\n" \
+        expected = "n:1800\n" \
                    "i:mozpub-track-digest256\n" \
                    "a:17:32:64\n" \
                    "\xd0\xe1\x96\xa0\xc2]5\xdd\n\x84Y<\xba\xe0\xf3\x833\xaaX" \
