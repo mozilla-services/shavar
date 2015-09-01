@@ -43,7 +43,7 @@ def parse_downloads(request):
         # Client claims to have chunks for this list
         if not chunks or (len(chunks) == 1 and not chunks[0]):
             parsed.append(info)
-            return parsed  # FIXME   Why return here?
+            continue
         # Uneven number of chunks should only occur if 'mac' was specified
         if len(chunks) % 2 != 0:
             raise ParseError("Invalid LISTINFO for %s" % lname)

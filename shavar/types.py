@@ -154,6 +154,6 @@ class DownloadsListInfo(object):
         return True
 
     def __repr__(self):
-        return "%s('%s, wants_mac=%s, adds=%s, subs=%s)" \
+        return "%s('%s', wants_mac=%s, adds=%s, subs=%s)" \
             % (self.__class__.__name__, self.name, self.wants_mac, self.adds,
                self.subs)
