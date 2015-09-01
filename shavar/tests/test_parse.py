@@ -110,6 +110,22 @@ class ParseTest(ShavarTestCase):
         dli1.add_range_claim('s', 1, 2)
         self.assertEqual(p, d)
 
+        # with multiple lists, at least one empty
+        # See https://github.com/mozilla-services/shavar/issues/56
+        s = "googpub-phish-shavar;\n"
+        s += "acme-white-shavar;a:1-7:s:1-2"
+        p = parse_downloads(dummy(s))
+
+        d = Downloads()
+        dli0 = DownloadsListInfo("googpub-phish-shavar")
+        d.append(dli0)
+
+        dli1 = DownloadsListInfo("acme-white-shavar")
+        d.append(dli1)
+        dli1.add_range_claim('a', 1, 7)
+        dli1.add_range_claim('s', 1, 2)
+        self.assertEqual(p, d)
+
     def test_parse_download_errors(self):
         self.assertRaises(LimitExceededError, parse_downloads,
                           dummy("mozpub-track-digest256;a:1-20000"))
