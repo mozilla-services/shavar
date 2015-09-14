@@ -18,11 +18,13 @@ def includeme(config):
     for lname in lists_to_serve:
         # Make sure we have a refresh interval set for the data source for the
         # lists
+        setting_name = 'refresh_check_interval'
         settings = config.registry.settings.getsection(lname)
-        default = config.registry.settings.get('refresh_check_interval',
-                                               12 * 60 * 60)
-        if 'refresh_check_interval' not in settings:
-            settings['refresh_check_interval'] = default
+        default = config.registry.settings.get('shavar.%s' %
+                                               setting_name,
+                                               10 * 60)
+        if setting_name not in settings:
+            settings[setting_name] = default
 
         # defaults = config.get_map('shavar')
         # settings = {'type': 'shavar',
@@ -98,7 +100,7 @@ class SafeBrowsingList(object):
         self.settings = settings
 
         scheme = self.url.scheme.lower()
-        interval = settings.get('refresh_check_interval', 12 * 60 * 60)
+        interval = settings.get('refresh_check_interval', 10 * 60)
         if (scheme == 'file' or not (self.url.scheme and self.url.netloc)):
             self._source = FileSource(self.source_url,
                                       refresh_interval=interval)

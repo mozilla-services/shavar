@@ -60,3 +60,15 @@ class S3SourceListsTest(ShavarTestCase):
         sblist = get_list(dumdum, 'mozpub-track-digest256')
         self.assertIsInstance(sblist, Digest256)
         self.assertEqual(sblist.delta([1, 2], [3]), ([4, 5], [6]))
+
+
+class DataRefreshTest(ShavarTestCase):
+
+    def test_5_data_refresh(self):
+        dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
+        d = dumdum.registry.settings.get('shavar.refresh_check_interval')
+        self.assertEqual(d, 29)
+        l = dumdum.registry['shavar.serving']['moz-abp-shavar']
+        self.assertEqual(l._source.interval, 29)
+        l = dumdum.registry['shavar.serving']['mozpub-track-digest256']
+        self.assertEqual(l._source.interval, 23)
