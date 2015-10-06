@@ -28,7 +28,7 @@ Configure for running locally in a development environment::
 
 Run the service locally:
 
-    pserver shavar.testing.ini
+    pserve shavar.testing.ini
 
 By default the service listens on port the loopback interface, port 6543.  If
 you want to change this, modify the values in the INI file's [server:main]
