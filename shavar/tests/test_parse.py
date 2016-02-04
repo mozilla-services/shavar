@@ -1,8 +1,11 @@
-import hashlib
 import StringIO
 
 from shavar.exceptions import ParseError
-from shavar.parse import parse_downloads, parse_gethash, parse_file_source
+from shavar.parse import (
+    parse_downloads,
+    parse_gethash,
+    parse_file_source,
+    parse_dir_source)
 from shavar.types import (
     Chunk,
     ChunkList,
@@ -10,6 +13,7 @@ from shavar.types import (
     DownloadsListInfo,
     LimitExceededError)
 from shavar.tests.base import (
+    DELTA_RESULT,
     dummy,
     hashes,
     test_file,
@@ -209,26 +213,15 @@ class ParseTest(ShavarTestCase):
                          ChunkList(add_chunks=adds, sub_chunks=subs))
 
     def test_parse_file_source_delta(self):
-        def chunkit(n, typ, *urls):
-            return Chunk(number=n, chunk_type=typ,
-                         hashes=[hashlib.sha256(u).digest() for u in urls])
-
-        result = ChunkList(add_chunks=[chunkit(1, 'a',
-                                               'https://www.mozilla.org/',
-                                               'https://www.google.com/'),
-                                       chunkit(2, 'a', 'https://github.com/',
-                                               'http://www.python.org/'),
-                                       chunkit(4, 'a',
-                                               'http://www.haskell.org/',
-                                               'https://www.mozilla.com/'),
-                                       chunkit(5, 'a', 'http://www.erlang.org',
-                                               'http://golang.org/')],
-                           sub_chunks=[chunkit(3, 's',
-                                               'https://github.com/'),
-                                       chunkit(6, 's',
-                                               'http://golang.org')])
         p = parse_file_source(open(test_file('delta_chunk_source')))
-        self.assertEqual(p, result)
+        self.assertEqual(p, DELTA_RESULT)
 
     def test_parse_file_source_errors(self):
         pass
+
+    def test_parse_dir_source(self):
+        p = parse_dir_source(open(test_file('delta_dir_source/index.json')))
+        self.assertEqual(p, DELTA_RESULT)
+        # Test with the use of basedir
+        p = parse_dir_source(open(test_file('index.json')))
+        self.assertEqual(p, DELTA_RESULT)

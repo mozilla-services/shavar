@@ -6,7 +6,7 @@ from pyramid import testing
 
 from mozsvc.tests.support import TestCase
 
-from shavar.types import Chunk
+from shavar.types import Chunk, ChunkList
 
 
 hashes = {'moz': hashlib.sha256('https://www.mozilla.org/').digest(),
@@ -93,3 +93,24 @@ class ShavarTestCase(TestCase):
         config = super(ShavarTestCase, self).get_configurator()
         config.include("shavar")
         return config
+
+
+def chunkit(n, typ, *urls):
+    return Chunk(number=n, chunk_type=typ,
+                 hashes=[hashlib.sha256(u).digest() for u in urls])
+
+
+DELTA_RESULT = ChunkList(add_chunks=[chunkit(1, 'a',
+                                             'https://www.mozilla.org/',
+                                             'https://www.google.com/'),
+                                     chunkit(2, 'a', 'https://github.com/',
+                                             'http://www.python.org/'),
+                                     chunkit(4, 'a',
+                                             'http://www.haskell.org/',
+                                             'https://www.mozilla.com/'),
+                                     chunkit(5, 'a', 'http://www.erlang.org',
+                                             'http://golang.org/')],
+                         sub_chunks=[chunkit(3, 's',
+                                             'https://github.com/'),
+                                     chunkit(6, 's',
+                                             'http://golang.org')])
