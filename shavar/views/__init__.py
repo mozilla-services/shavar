@@ -55,7 +55,7 @@ def shut_up_common_log_200s():
 
         def filter(self, record):
             if ('code' in record.__dict__ and
-                record.__dict__['code'] == 200):
+                    record.__dict__['code'] == 200):
                 return 0
             return 1
 
