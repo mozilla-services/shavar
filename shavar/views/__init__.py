@@ -34,6 +34,34 @@ def includeme(config):
     config.add_route('newkey', '/newkey')
     config.add_view(newkey_view, route_name='newkey', request_method='GET')
 
+    if config.registry.settings.get('shavar.stfu_200_logging', False):
+        shut_up_common_log_200s()
+
+
+def shut_up_common_log_200s():
+    class StfuWsgi200LogFilter(object):
+        """Mute the wsgi access logger"""
+
+        def filter(self, record):
+            if '" 200 ' in record.msg:
+                return 0
+            return 1
+
+    frogger = logging.getLogger('wsgi')
+    frogger.addFilter(StfuWsgi200LogFilter())
+
+    class StfuMetrics200sLogFilter(object):
+        """Drop HTTP 200s on the floor to minimize disk issues in prod."""
+
+        def filter(self, record):
+            if ('code' in record.__dict__ and
+                    record.__dict__['code'] == 200):
+                return 0
+            return 1
+
+    frogger = logging.getLogger('mozsvc.metrics')
+    frogger.addFilter(StfuMetrics200sLogFilter())
+
 
 def _setting(request, section, key, default=None):
     return request.registry.settings.get("%s.%s" % (section, key), default)
