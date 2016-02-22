@@ -13,8 +13,10 @@ build/
 develop-eggs/
 dist/
 eggs/
+include/
 lib/
 lib64/
+man/
 parts/
 sdist/
 var/
@@ -55,8 +57,10 @@ docs/_build/
 
 *.pyc
 .channel
-.Python
 *~
 *.swp
 *.log
 .#*
+
+# Ignore the generated version.json file
+version.json
