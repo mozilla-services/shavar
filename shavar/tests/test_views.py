@@ -125,3 +125,14 @@ class NoDeltaViewTests(ShavarTestCase):
         request = dummy(req, path='/downloads')
         response = downloads_view(request)
         self.assertEqual(response.body, expected)
+
+
+class VersionViewTest(ShavarTestCase):
+
+    def test_1_test_version_view(self):
+        from shavar.views.version import version_view
+        request = dummy('', path="/__version__")
+        response = version_view(request)
+        # compare against version.json in the top level dir
+        with open('version.json', 'r') as f:
+            self.assertEqual(response.body, f.read())
