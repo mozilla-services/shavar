@@ -34,6 +34,8 @@ def includeme(config):
     config.add_route('newkey', '/newkey')
     config.add_view(newkey_view, route_name='newkey', request_method='GET')
 
+    config.include('shavar.views.version')
+
     if config.registry.settings.get('shavar.stfu_200_logging', False):
         shut_up_common_log_200s()
 
