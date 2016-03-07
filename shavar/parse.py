@@ -18,7 +18,7 @@ def parse_downloads(request):
         if line.startswith("s;"):
             if lineno != 0:
                 return ParseError("Size request can only be the first line!")
-            req_size = line.split(";", 2)[1]
+            req_size = line.split(";", 1)[1]
             # Almost certainly redundant due to stripping the line above
             req_size = req_size.strip()
             try:
@@ -28,7 +28,10 @@ def parse_downloads(request):
             parsed.req_size = req_size
             continue
 
-        lname, chunklist = line.split(";", 2)
+        if ";" not in line:
+            return ParseError("Bad downloads request: no semi-colon")
+
+        lname, chunklist = line.split(";", 1)
         if not lname or '-' not in lname:
             raise ParseError("Invalid list name: \"%s\"" % lname)
         info = DownloadsListInfo(lname, limit=limit)
@@ -48,21 +51,19 @@ def parse_downloads(request):
         if len(chunks) % 2 != 0:
             raise ParseError("Invalid LISTINFO for %s" % lname)
 
-        claims = {'a': [], 's': []}
         while chunks:
             ctype = chunks.pop(0)
             if ctype not in ('a', 's'):
                 raise ParseError("Invalid CHUNKTYPE \"%s\" for %s" % (ctype,
                                                                       lname))
 
-            claim = []
             list_of_chunks = chunks.pop(0)
             for chunk in list_of_chunks.split(','):
                 try:
                     chunk = int(chunk)
                 except ValueError:
                     if chunk.find('-'):
-                        low, high = chunk.split('-', 2)
+                        low, high = chunk.split('-', 1)
                         # FIXME should probably be stricter about testing for
                         #       pure integers only on the input
                         try:
@@ -76,9 +77,8 @@ def parse_downloads(request):
                                              (chunk, lname))
 
                         info.add_range_claim(ctype, low, high)
-                else:
+                else:  # Resist temptation to indent!  It's a try/except/else
                     info.add_claim(ctype, chunk)
-            claims[ctype].extend(claim)
         parsed.append(info)
     return parsed
 
@@ -100,10 +100,11 @@ def parse_gethash(request):
     # determine size of individual prefixes and length of payload
     header = body_file.readline()
     try:
-        prefix_len, payload_len = [int(x) for x in header.split(':', 2)]
+        prefix_len, payload_len = [int(x) for x in header.split(':', 1)]
     except ValueError:
         raise ParseError('Invalid prefix or payload size: "%s"' % header)
-    if payload_len % prefix_len != 0:
+    if ((payload_len % prefix_len != 0) or
+            (payload_len < prefix_len)):
         raise ParseError("Payload length invalid: \"%d\"" % payload_len)
 
     prefix_total = payload_len / prefix_len
@@ -111,14 +112,19 @@ def parse_gethash(request):
     total_read = 0
     while prefixes_read < prefix_total:
         prefix = body_file.read(prefix_len)
+        if len(prefix) < prefix_len:
+            break
         total_read += len(prefix)
         prefixes_read += 1
         parsed.append(prefix)
 
-    # FIXME: won't reach for both of these?
+    if body_file.peek(prefix_len):
+        raise ParseError("Oversized payload!")
+
     if prefixes_read != prefix_total:
         raise ParseError("Hash read mismatch: client claimed %d, read %d" %
                          (prefix_total, prefixes_read))
+
     if total_read != payload_len:
         raise ParseError("Mismatch on gethash parse: client: %d, actual: %d" %
                          (payload_len, total_read))
@@ -171,7 +177,7 @@ def parse_file_source(handle):
             raise ParseError('Incorrect number of fields in chunk header: '
                              '"%s"' % header)
 
-        add_sub, chunk_num, hash_len, read_len = header.split(':', 4)
+        add_sub, chunk_num, hash_len, read_len = header.split(':', 3)
 
         if len(add_sub) != 1:
             raise ParseError('Chunk type is too long: "%s"' % header)
