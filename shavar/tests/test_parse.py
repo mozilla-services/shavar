@@ -203,10 +203,6 @@ class ParseTest(ShavarTestCase):
             parse_gethash(dummy("4:8\n\xdd\x01J\xf5\xedk8"))
         self.assertEqual(str(ecm.exception),
                          "Hash read mismatch: client claimed 2, read 1")
-        # Extraneous trailing data
-        with self.assertRaises(ParseError) as ecm:
-            parse_gethash(dummy("4:8\n\xdd\x01J\xf5\xedk8\xd9\x13\x0e?F"))
-        self.assertEqual(str(ecm.exception), "Oversized payload!")
 
     def test_parse_file_source(self):
         d = ''.join([self.hm, self.hg])

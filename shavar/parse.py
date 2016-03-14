@@ -118,9 +118,6 @@ def parse_gethash(request):
         prefixes_read += 1
         parsed.append(prefix)
 
-    if body_file.peek(prefix_len):
-        raise ParseError("Oversized payload!")
-
     if prefixes_read != prefix_total:
         raise ParseError("Hash read mismatch: client claimed %d, read %d" %
                          (prefix_total, prefixes_read))
