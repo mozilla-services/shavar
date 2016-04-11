@@ -124,7 +124,7 @@ class SafeBrowsingList(object):
             self._source.load()
         except NoDataError, e:
             # FIXME log it
-            e
+            raise e
 
     def refresh(self):
         self._source.refresh()
