@@ -9,6 +9,7 @@ from pyramid.httpexceptions import (
     HTTPNoContent,
     HTTPNotImplemented,
     HTTPOk,
+    HTTPNotFound,
     HTTPInternalServerError)
 
 from shavar.exceptions import ConfigurationError, ParseError
@@ -38,6 +39,8 @@ def includeme(config):
 
     if config.registry.settings.get('shavar.stfu_200_logging', False):
         shut_up_common_log_200s()
+
+    config.add_notfound_view(not_found)
 
 
 def shut_up_common_log_200s():
@@ -217,3 +220,8 @@ def newkey_view(request):
     # Not implemented at the moment because Mozilla requires HTTPS for its
     # hosting site.  As a result the implmementation has been delayed a bit.
     return HTTPNotImplemented()
+
+
+def not_found(request):
+    return HTTPNotFound(content_type="application/octet-stream",
+                        body="The requested page was not found.")
