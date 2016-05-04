@@ -1,7 +1,12 @@
 from urlparse import urlparse
 
-from shavar.exceptions import MissingListDataError
-from shavar.sources import FileSource, S3FileSource
+from shavar.exceptions import MissingListDataError, NoDataError
+from shavar.sources import (
+    DirectorySource,
+    FileSource,
+    S3DirectorySource,
+    S3FileSource
+)
 
 
 def includeme(config):
@@ -102,15 +107,24 @@ class SafeBrowsingList(object):
         scheme = self.url.scheme.lower()
         interval = settings.get('refresh_check_interval', 10 * 60)
         if (scheme == 'file' or not (self.url.scheme and self.url.netloc)):
-            self._source = FileSource(self.source_url,
-                                      refresh_interval=interval)
+            cls = FileSource
         elif scheme == 's3+file':
-            self._source = S3FileSource(self.source_url,
-                                        refresh_interval=interval)
+            cls = S3FileSource
+        elif scheme == 'dir':
+            cls = DirectorySource
+        elif scheme == 's3+dir':
+            cls = S3DirectorySource
         else:
-            raise ValueError('Only local single files and S3 single files '
-                             'sources supported at this time')
-        self._source.load()
+            raise ValueError('Only local single files, local directories, S3 '
+                             'single files, and S3 directory sources are '
+                             'supported at this time')
+
+        self._source = cls(self.source_url, refresh_interval=interval)
+        try:
+            self._source.load()
+        except NoDataError, e:
+            # FIXME log it
+            raise e
 
     def refresh(self):
         self._source.refresh()
@@ -131,7 +145,10 @@ class SafeBrowsingList(object):
         return sorted(a_delta), sorted(s_delta)
 
     def fetch(self, add_chunks=[], sub_chunks=[]):
-        details = self._source.fetch(add_chunks, sub_chunks)
+        try:
+            details = self._source.fetch(add_chunks, sub_chunks)
+        except NoDataError:
+            details = {'adds': (), 'subs': ()}
         details['type'] = self.type
         return details
 

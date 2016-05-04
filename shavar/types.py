@@ -68,6 +68,9 @@ class ChunkList(object):
             return False
         return True
 
+    def __len__(self):
+        return len(self.adds) + len(self.subs)
+
     def find_prefix(self, prefix):
         list_o_chunks = []
         for number, chunk in self.adds.iteritems():

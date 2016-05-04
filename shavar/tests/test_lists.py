@@ -1,3 +1,5 @@
+import posixpath
+
 import boto
 from boto.s3.key import Key
 from moto import mock_s3
@@ -44,22 +46,47 @@ class S3SourceListsTest(ShavarTestCase):
     bucket_name = 'boost-a-nanny'
     key_name = 'delta_chunk_source'
 
+    dir_bucket_name = 'pickle-farthing'
+    dir_list_name = 'testpub-bananas-digest256'
+
     def setUp(self):
-        with mock_s3():
-            conn = boto.connect_s3()
-            b = conn.create_bucket(self.bucket_name)
+        self.mock = mock_s3()
+        self.mock.start()
+
+        #
+        # Populate the data in mock S3
+        #
+        # s3+file first
+        conn = boto.connect_s3()
+        b = conn.create_bucket(self.bucket_name)
+        k = Key(b)
+        k.name = self.key_name
+        with open(test_file(self.key_name), 'rb') as f:
+            k.set_contents_from_file(f)
+
+        # s3+dir
+        b = conn.create_bucket(self.dir_bucket_name)
+        for fname in ('index.json', '1', '2', '3', '4', '5', '6'):
             k = Key(b)
-            k.name = self.key_name
-            with open(test_file(self.key_name), 'rb') as f:
+            k.name = posixpath.join(self.dir_list_name, fname)
+            with open(test_file(posixpath.join('delta_dir_source', fname)),
+                      'rb') as f:
                 k.set_contents_from_file(f)
-            super(S3SourceListsTest, self).setUp()
+
+        # initialize the internal list data structure via the normal method
+        super(S3SourceListsTest, self).setUp()
+
+    def tearDown(self):
+        self.mock.stop()
+        super(S3SourceListsTest, self).tearDown()
 
     def test_3_s3_sources_in_list_instantiation(self):
         # Basically the same tests in test_0_get_list and test_2_delta above
         dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
-        sblist = get_list(dumdum, 'mozpub-track-digest256')
-        self.assertIsInstance(sblist, Digest256)
-        self.assertEqual(sblist.delta([1, 2], [3]), ([4, 5], [6]))
+        for list_ in ('mozpub-track-digest256', 'testpub-bananas-digest256'):
+            sblist = get_list(dumdum, list_)
+            self.assertIsInstance(sblist, Digest256)
+            self.assertEqual(sblist.delta([1, 2], [3]), ([4, 5], [6]))
 
 
 class DataRefreshTest(ShavarTestCase):

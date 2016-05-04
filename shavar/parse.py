@@ -1,3 +1,8 @@
+import itertools
+import json
+import os.path
+import posixpath
+
 from shavar.exceptions import ParseError
 from shavar.types import Chunk, ChunkList, Downloads, DownloadsListInfo
 
@@ -209,5 +214,75 @@ def parse_file_source(handle):
     return parsed
 
 
-def parse_dir_source(handle):
-    pass
+def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
+    """
+    Expects a file alike object with the contents of a JSON formatted index
+    file that has the following structure:
+
+    {
+        "name": "mozpub-tracking-digest256",
+        "basedir": "mozpub-tracking-digest256",
+        "chunks": {
+            "1": {
+                "path": "mozpub-tracking-digest256/1",
+                "hashes(optional)": [ "", "" ],
+                "prefixes(optional)": [ "", "" ]
+            },
+            "2": {
+                "path": "mozpub-tracking-digest256/2",
+                "hashes": [ "", "" ],
+                "prefixes": [ "", "" ]
+            }
+        }
+    }
+
+    The basedir, hashes, and prefixes entries are optional.  The chunks to be
+    served will be parsed with parse_file_source().  If hashes and prefixes are
+    provided, they will be verified against the data provided in the given
+    chunk file.
+    """
+    try:
+        index = json.load(handle)
+    except ValueError, e:
+        raise ParseError("Could not parse index file: %s" % e)
+
+    if 'name' not in index:
+            raise ParseError("Incorrectly formatted index: missing list name")
+
+    if 'chunks' not in index:
+        raise ParseError("Incorrectly formatted index: missing chunks")
+
+    if 'basedir' in index:
+        basedir = posixpath.join(os.path.dirname(handle.name),
+                                 index['basedir'])
+    else:
+        basedir = os.path.dirname(handle.name)
+
+    parsed = ChunkList()
+    for key in index['chunks'].iterkeys():
+        # A little massaging to make the data structure a little cleaner
+        try:
+            index['chunks'][int(key)] = index['chunks'][key]
+            del index['chunks'][key]
+        except KeyError:
+            raise ParseError("Some weird behaviour with the list of chunks "
+                             "in \"%s\"" % handle.filename)
+
+        chunk_file = posixpath.join(basedir, key)
+
+        if not exists_cb(chunk_file):
+            raise ParseError("Invalid chunk filename: \"%s\"" % chunk_file)
+
+        with open_cb(chunk_file, 'rb') as f:
+            chunk_list = parse_file_source(f)
+
+        # Only one chunk per file
+        if len(chunk_list) > 1:
+            raise ParseError("More than one chunk in chunk file \"%s\""
+                             % chunk_file)
+
+        for chunk in itertools.chain(chunk_list.adds.itervalues(),
+                                     chunk_list.subs.itervalues()):
+            parsed.insert_chunk(chunk)
+
+    return parsed
