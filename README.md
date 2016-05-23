@@ -18,9 +18,11 @@ Install the necessary dependencies:
 
     pip install -r requirements.txt
 
-Run unit tests to be sure it isn' horribly broken::
+Run unit tests to be sure it isn't horribly broken::
 
     make test
+
+> Note: tests use boto; so make sure your ~/.boto config works
 
 Configure for running locally in a development environment::
 
