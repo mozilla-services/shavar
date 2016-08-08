@@ -22,7 +22,7 @@ dependencies:
       I="image-$(date +%j).tar"; mkdir -p ~/docker; rm ~/docker/*; docker save app:build > ~/docker/$I; ls -l ~/docker
 test:
   override:
-    - docker run --net=host app:build
+    - docker run -d --net=host app:build; sleep 10
     - curl -d " " --retry 10 --retry-delay 5 -v 'http://localhost:6543//list?client=foo&appver=1&pver=2.2'
 deployment:
   hub_latest:
