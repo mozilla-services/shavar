@@ -1,5 +1,4 @@
 FROM python:2.7
-USER app
 WORKDIR /app
 EXPOSE 8080
 RUN groupadd -g 10001 app && useradd -d /app -g 10001 -G app -M  -s /bin/sh -u 10001 app
