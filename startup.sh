@@ -37,22 +37,22 @@ if env | grep -q "ENABLE_NEWRELIC"; then
   fi
 fi
 
-if [ -x /usr/local/bin/uwsgi ]; then
-  case "$COMMAND" in
-    START)
+case "$COMMAND" in
+  START)
+    if [ -x /usr/local/bin/uwsgi ]; then
       start
       exit 0
-      ;;
-    DEPLOY)
-      deploy
-      exit 0
-      ;;
-    *)
-      echo "Invalid option specified: ARG=$COMMAND"
+    else
+      echo "uwsgi is not installed"
       exit 1
-      ;;
-  esac
-else
-  echo "uwsgi is not installed"
-  exit 1
-fi
+    fi
+    ;;
+  DEPLOY)
+    deploy
+    exit 0
+    ;;
+  *)
+    echo "Invalid option specified: ARG=$COMMAND"
+    exit 1
+    ;;
+esac
