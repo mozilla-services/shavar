@@ -64,3 +64,6 @@ docs/_build/
 
 # Ignore the generated version.json file
 version.json
+
+# Ignore newrelic.ini if present
+newrelic.ini
