@@ -1,8 +1,7 @@
 FROM python:2.7
 ENV NEWRELIC_LIC_KEY ${NEWRELIC_LIC_KEY:-"1234"}
 ENV ENABLE_NEWRELIC $ENABLE_NEWRELIC
-RUN groupadd -g 10001 app && \
-      useradd -d /app -g 10001 -G app -M -s /bin/sh -u 10001 app
+RUN useradd -d /app -M -s /bin/sh -u 10001 -U app
 WORKDIR /app
 ENTRYPOINT ["/app/startup.sh"]
 CMD ["START"]
