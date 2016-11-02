@@ -61,6 +61,13 @@ A commented example configuration::
     # provide absolute paths.
     lists_root = tests
 
+    # This is the public host and scheme to reach the service
+    # like https://shavar.stage.mozaws.net
+    # when not provided, uses X-Forwarded-Host then fallsback to HTTP_HOST
+    # and X-Forwarded-Proto for the scheme
+    host = shavar.in.production.mozilla.com
+    scheme = https
+
     [mozpub-track-digest256]
     # The type of list data that will be shipped.  Presumably this has some
     # greater impact on the client side but as yet, it isn't used for much
@@ -109,3 +116,4 @@ A commented example configuration::
     #
     # Best practice: make sure it ends in a /
     redirect_url_base = http://localhost:6543/data/
+

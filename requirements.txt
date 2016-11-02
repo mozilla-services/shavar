@@ -12,6 +12,8 @@ statsd==3.0
 waitress==0.8.9
 uwsgi==2.0.11.1
 mozsvc==0.8
+pyramid_mako==1.0.2
+swagger-parser==0.1.11
 #
 # mozsvc has some wonky issues with testing dependencies
 #

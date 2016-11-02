@@ -1,6 +1,6 @@
 import os
-
 from setuptools import setup, find_packages
+from shavar import __version__
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.md')) as f:
@@ -12,7 +12,7 @@ with open(os.path.join(here, 'requirements.txt')) as f:
 
 
 setup(name='shavar',
-      version='0.7',
+      version=__version__,
       description='shavar',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
@@ -21,8 +21,8 @@ setup(name='shavar',
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         ],
-      author='Ryan Tilder',
-      author_email='rtilder@mozilla.com',
+      author='Luke Crouch',
+      author_email='lcrouch@mozilla.com',
       url='',
       keywords='web pyramid pylons',
       packages=find_packages(),
