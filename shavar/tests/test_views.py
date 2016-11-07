@@ -1,4 +1,13 @@
+import os
+from webtest import TestApp
+from swagger_parser import SwaggerParser
+import yaml
+
 from shavar.tests.base import dummy, hashes, ShavarTestCase
+from shavar import __version__
+
+
+TEST_INI = os.path.join(os.path.dirname(__file__), 'test.ini')
 
 
 class ViewTests(ShavarTestCase):
@@ -137,3 +146,31 @@ class VersionViewTest(ShavarTestCase):
         # compare against version.json in the top level dir
         with open('version.json', 'r') as f:
             self.assertEqual(response.body, f.read())
+
+
+class SwaggerViewTest(ShavarTestCase):
+    def setUp(self):
+        super(SwaggerViewTest, self).setUp()
+        from shavar import main
+        config = {'__file__': TEST_INI}
+        settings = {}
+        app = main(config, **settings)
+        self.testapp = TestApp(app)
+
+    def test_swagger_view(self):
+        res = self.testapp.get('/__api__', status=200)
+        # make sure it's compliant
+        parser = SwaggerParser(swagger_dict=yaml.load(res.body))
+        spec = parser.specification
+        self.assertEqual(spec['info']['version'], __version__)
+        self.assertEqual(spec['schemes'], ['https'])
+        self.assertEqual(spec['host'], 'shavar.stage.mozaws.net')
+
+        # now testing that every GET endpoint is present
+        for path, items in spec['paths'].items():
+            for verb, options in items.items():
+                verb = verb.upper()
+                if verb != 'GET':
+                    continue
+                statuses = [int(st) for st in options['responses'].keys()]
+                res = self.testapp.get(path, status=statuses)
