@@ -12,7 +12,17 @@ notifications:
     skip_join: false
 
 install:
-  - make build
+  - pip install -r requirements-test.txt
+
+before_script:
+  - >
+      printf '{"commit":"%s","version":"%s","source":"https://github.com/%s","build":"https://travis-ci.org/%s/builds/%s"}\n'
+      "$TRAVIS_COMMIT"
+      "$TAVIS_TAG"
+      "$TRAVIS_REPO_SLUG"
+      "$TRAVIS_REPO_SLUG"
+      "$TRAVIS_BUILD_ID"
+      > version.json
 
 script:
-  - make test
+  - nosetests ./shavar/tests
