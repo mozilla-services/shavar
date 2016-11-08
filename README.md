@@ -25,26 +25,18 @@ Check that it's working::
 
     curl -v -d" " localhost:8080/list
 
-TODO: FIX THESE INSTRUCTIONS FOR DOCKER
----------------------------------------
+Run tests
+---------
 
-Run unit tests to be sure it isn't horribly broken::
+1. Install test dependencies (probably into a virtualenv)::
 
-    make test
+    pip install -r requirements-test.txt
 
-> Note: tests use boto; so make sure your ~/.boto config works
+2. Tests use boto; so make sure your ~/.boto config works
 
-Configure for running locally in a development environment::
+3. Run the tests with `nosetests`::
 
-    python setup.py develop
-
-Run the service locally:
-
-    pserve shavar.testing.ini
-
-By default the service listens on port the loopback interface, port 6543.  If
-you want to change this, modify the values in the INI file's [server:main]
-section.
+    nosetests -s ./shavar/tests
 
 
 Configuration
