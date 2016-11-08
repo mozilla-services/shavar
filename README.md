@@ -6,17 +6,27 @@ speaks, see:
   https://developers.google.com/safe-browsing/developers_guide
 
 
-Running locally
----------------
+Running locally with Docker
+---------------------------
 
-For dev testing you probably want to run from a virtualenv::
+Generate a `version.json` file::
 
-    virtualenv shavar
-    source shavar/bin/activate
+    echo '{"commit":"1","version":test","source":"testing"}' > version.json
 
-Install the necessary dependencies:
+Build the docker image::
 
-    pip install -r requirements.txt
+    docker build .
+
+Run the image in a container with port 8080 published to the host::
+
+    docker run -p 8080:8080 <image>
+
+Check that it's working::
+
+    curl -v -d" " localhost:8080/list
+
+TODO: FIX THESE INSTRUCTIONS FOR DOCKER
+---------------------------------------
 
 Run unit tests to be sure it isn't horribly broken::
 

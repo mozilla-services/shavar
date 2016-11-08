@@ -67,3 +67,6 @@ version.json
 
 # Ignore newrelic.ini if present
 newrelic.ini
+
+# Ignore the generated README.html file
+README.html

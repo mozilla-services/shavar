@@ -6,7 +6,8 @@ WORKDIR /app
 ENTRYPOINT ["/app/startup.sh"]
 CMD ["START"]
 EXPOSE 8080
-COPY . /app
+COPY requirements.txt /app
 RUN pip install -r requirements.txt --no-cache-dir --disable-pip-version-check && \
       pip install newrelic
+COPY . /app
 RUN python setup.py install && chown -R app:app /app
