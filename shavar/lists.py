@@ -1,4 +1,9 @@
+import ConfigParser
+import StringIO
 from urlparse import urlparse
+
+from boto.exception import S3ResponseError
+from boto.s3.connection import S3Connection
 
 from shavar.exceptions import MissingListDataError, NoDataError
 from shavar.sources import (
@@ -10,21 +15,32 @@ from shavar.sources import (
 
 
 def includeme(config):
-    lists_to_serve = config.registry.settings.get('shavar.lists_served', [])
+    lists_to_serve = config.registry.settings.get('shavar.lists_served', None)
     if not lists_to_serve:
         raise ValueError("lists_served appears to be empty or missing "
                          "in the config \"%s\"!" % config.filename)
-
-    if isinstance(lists_to_serve, basestring):
-        lists_to_serve = [lists_to_serve]
+    lists_to_serve_url = urlparse(lists_to_serve)
 
     config.registry['shavar.serving'] = {}
 
-    for lname in lists_to_serve:
+    try:
+        conn = S3Connection()
+        bucket = conn.get_bucket(lists_to_serve_url.netloc)
+    except S3ResponseError, e:
+            raise NoDataError("Could not find bucket \"%s\": %s" %
+                              (lists_to_serve_url.netloc, e))
+
+    for list_key in bucket.get_all_keys():
+        list_key_name = list_key.key
+        list_name = list_key_name.rstrip('.ini')
+        list_ini = list_key.get_contents_as_string()
+        list_config = ConfigParser.ConfigParser()
+        list_config.readfp(StringIO.StringIO(list_ini))
+
         # Make sure we have a refresh interval set for the data source for the
         # lists
         setting_name = 'refresh_check_interval'
-        settings = config.registry.settings.getsection(lname)
+        settings = dict(list_config.items(list_name))
         default = config.registry.settings.get('shavar.%s' %
                                                setting_name,
                                                10 * 60)
@@ -36,16 +52,16 @@ def includeme(config):
         #            'source': os.path.join(defaults.get('lists_root',
         #                                                ''), lname)}
 
-        type_ = settings.get('type', '')
+        type_ = list_config.get(list_name, 'type')
         if type_ == 'digest256':
-            list_ = Digest256(lname, settings['source'], settings)
+            list_ = Digest256(list_name, settings['source'], settings)
         elif type_ == 'shavar':
-            list_ = Shavar(lname, settings['source'], settings)
+            list_ = Shavar(list_name, settings['source'], settings)
         else:
-            raise ValueError('Unknown list type for "%s": "%s"' % (lname,
+            raise ValueError('Unknown list type for "%s": "%s"' % (list_name,
                                                                    type_))
 
-        config.registry['shavar.serving'][lname] = list_
+        config.registry['shavar.serving'][list_name] = list_
 
 
 def get_list(request, list_name):
