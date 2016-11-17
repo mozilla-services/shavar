@@ -2,9 +2,6 @@ import ConfigParser
 import StringIO
 from urlparse import urlparse
 
-from boto.exception import S3ResponseError
-from boto.s3.connection import S3Connection
-
 from shavar.exceptions import MissingListDataError, NoDataError
 from shavar.sources import (
     DirectorySource,
@@ -20,22 +17,47 @@ def includeme(config):
         raise ValueError("lists_served appears to be empty or missing "
                          "in the config \"%s\"!" % config.filename)
     lists_to_serve_url = urlparse(lists_to_serve)
+    lists_to_serve_scheme = lists_to_serve_url.scheme.lower()
+    list_configs = []
 
     config.registry['shavar.serving'] = {}
 
-    try:
-        conn = S3Connection()
-        bucket = conn.get_bucket(lists_to_serve_url.netloc)
-    except S3ResponseError, e:
-            raise NoDataError("Could not find bucket \"%s\": %s" %
-                              (lists_to_serve_url.netloc, e))
+    if lists_to_serve_scheme == 'dir':
+        import os
+        list_config_dir = lists_to_serve_url.netloc + lists_to_serve_url.path
+        for list_config_file in os.listdir(list_config_dir):
+            if list_config_file.endswith(".ini"):
+                list_name = list_config_file[:-len(".ini")]
+                list_config = ConfigParser.ConfigParser()
+                list_config.readfp(open(
+                    os.path.join(list_config_dir, list_config_file)
+                ))
+                list_configs.append({'name': list_name, 'config': list_config})
 
-    for list_key in bucket.get_all_keys():
-        list_key_name = list_key.key
-        list_name = list_key_name.rstrip('.ini')
-        list_ini = list_key.get_contents_as_string()
-        list_config = ConfigParser.ConfigParser()
-        list_config.readfp(StringIO.StringIO(list_ini))
+    elif lists_to_serve_scheme == 's3+dir':
+        from boto.exception import S3ResponseError
+        from boto.s3.connection import S3Connection
+
+        try:
+            conn = S3Connection()
+            bucket = conn.get_bucket(lists_to_serve_url.netloc)
+        except S3ResponseError, e:
+                raise NoDataError("Could not find bucket \"%s\": %s" %
+                                  (lists_to_serve_url.netloc, e))
+        for list_key in bucket.get_all_keys():
+            list_key_name = list_key.key
+            list_name = list_key_name.rstrip('.ini')
+            list_ini = list_key.get_contents_as_string()
+            list_config = ConfigParser.ConfigParser()
+            list_config.readfp(StringIO.StringIO(list_ini))
+            list_configs.append({'name': list_name, 'config': list_config})
+
+    else:
+        raise ValueError('lists_served must be dir:// or s3+dir:// value')
+
+    for list_config in list_configs:
+        list_name = list_config['name']
+        list_config = list_config['config']
 
         # Make sure we have a refresh interval set for the data source for the
         # lists
