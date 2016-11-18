@@ -105,8 +105,9 @@ def downloads_view(request):
 
     for list_info in parsed:
         # Do we even serve that list?
-        if list_info.name not in _setting(request, 'shavar', 'lists_served',
-                                          tuple()):
+        if list_info.name not in _setting(
+            request, 'shavar', 'list_names_served', tuple()
+        ):
             logger.warn('Unknown list "%s" reported; ignoring'
                         % list_info.name)
             annotate_request(request, "shavar.downloads.unknown.list", 1)
@@ -128,11 +129,15 @@ def downloads_view(request):
             continue
 
         # Fetch the appropriate chunks
-        resp_payload['lists'][list_info.name] = sblist.fetch(to_add, to_sub)
+        resp_payload['lists'][list_info.name] = {
+            'sblist': sblist,
+            'ldata': sblist.fetch(to_add, to_sub)
+        }
 
         # Not publishing deltas for this list?  Delete all previous chunks to
         # make way for the new corpus
-        if _setting(request, list_info.name, 'not_publishing_deltas'):
+        # if _setting(request, list_info.name, 'not_publishing_deltas'):
+        if sblist.settings.get('not_publishing_deltas'):
             # Raise hell if we have suspicious data with this flag set
             if (len(to_add) != 1 or len(to_sub) != 0):
                 logger.error("Configuration error!  Mismatch between "
@@ -153,20 +158,23 @@ def format_downloads(request, resp_payload):
     """
     body = "n:{0}\n".format(resp_payload['interval'])
 
-    for lname, ldata in resp_payload['lists'].iteritems():
+    for lname, ldict in resp_payload['lists'].iteritems():
+        ldata = ldict['ldata']
+        sblist = ldict['sblist']
         # Support for the previous, broken method of responding to
         # digest256 type lists
-        be_broken = _setting(request, lname,
-                             "sending_data_inline_is_a_bad_idea_but_do_"
-                             "it_for_this_list", False)
+        be_broken = sblist.settings.get(
+            "sending_data_inline_is_a_bad_idea_but_do_it_for_this_list",
+            False
+        )
         body += "i:%s\n" % lname
 
         # Chunk deletion commands come first
-        if 'adddels' in ldata and ldata['adddels']:
-            dels = ','.join(['{0}'.format(num) for num in ldata['adddels']])
+        if 'adddels' in ldict and ldict['adddels']:
+            dels = ','.join(['{0}'.format(num) for num in ldict['adddels']])
             body += 'ad:{0}\n'.format(dels)
-        if 'subdels' in ldata and ldata['subdels']:
-            dels = ','.join(['{0}'.format(num) for num in ldata['subdels']])
+        if 'subdels' in ldict and ldict['subdels']:
+            dels = ','.join(['{0}'.format(num) for num in ldict['subdels']])
             body += 'sd:{0}\n'.format(dels)
 
         # TODO  Should we prioritize subs over adds?
@@ -179,8 +187,8 @@ def format_downloads(request, resp_payload):
                                           hash_len=chunk.hash_len,
                                           payload_len=len(d), payload=d)
             else:
-                baseurl = _setting(request, lname, 'redirect_url_base')
                 # Grab the default from the app
+                baseurl = sblist.settings.get('redirect_url_base')
                 if not baseurl:
                     baseurl = _setting(request, 'shavar', 'redirect_url_base')
                 fudge = os.path.join(baseurl, lname, "%d" % chunk.number)

@@ -16,7 +16,10 @@ def includeme(config):
     if not lists_to_serve:
         raise ValueError("lists_served appears to be empty or missing "
                          "in the config \"%s\"!" % config.filename)
-    lists_to_serve_url = urlparse(lists_to_serve)
+    try:
+        lists_to_serve_url = urlparse(lists_to_serve)
+    except TypeError, e:
+        raise ValueError('lists_served must be dir:// or s3+dir:// value')
     lists_to_serve_scheme = lists_to_serve_url.scheme.lower()
     list_configs = []
 
@@ -35,11 +38,11 @@ def includeme(config):
                 list_configs.append({'name': list_name, 'config': list_config})
 
     elif lists_to_serve_scheme == 's3+dir':
+        import boto
         from boto.exception import S3ResponseError
-        from boto.s3.connection import S3Connection
 
         try:
-            conn = S3Connection()
+            conn = boto.connect_s3()
             bucket = conn.get_bucket(lists_to_serve_url.netloc)
         except S3ResponseError, e:
                 raise NoDataError("Could not find bucket \"%s\": %s" %
@@ -84,6 +87,10 @@ def includeme(config):
                                                                    type_))
 
         config.registry['shavar.serving'][list_name] = list_
+
+    config.registry.settings['shavar.list_names_served'] = [
+        list['name'] for list in list_configs
+    ]
 
 
 def get_list(request, list_name):
