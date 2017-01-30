@@ -1,3 +1,7 @@
+0.9
+---
+- List configs now come from a directory (dir:// or s3+dir://) of .ini files
+
 0.0
 ---
 
