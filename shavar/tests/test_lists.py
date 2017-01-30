@@ -1,3 +1,4 @@
+import os
 import posixpath
 
 import boto
@@ -43,6 +44,8 @@ class S3SourceListsTest(ShavarTestCase):
 
     ini_file = "tests_s3.ini"
 
+    lists_served_bucket_name = 'shavar-lists-dev'
+
     bucket_name = 'boost-a-nanny'
     key_name = 'delta_chunk_source'
 
@@ -56,15 +59,27 @@ class S3SourceListsTest(ShavarTestCase):
         #
         # Populate the data in mock S3
         #
-        # s3+file first
         conn = boto.connect_s3()
+
+        # s3+dir lists_served bucket first
+        b = conn.create_bucket(self.lists_served_bucket_name)
+        for fname in ['mozpub-track-digest256.ini',
+                      'testpub-bananas-digest256.ini']:
+            k = Key(b)
+            k.name = fname
+            f = open(os.path.join(
+                os.path.dirname(__file__), 'lists_served_s3', fname
+            ))
+            k.set_contents_from_file(f)
+
+        # s3+file contents
         b = conn.create_bucket(self.bucket_name)
         k = Key(b)
         k.name = self.key_name
         with open(test_file(self.key_name), 'rb') as f:
             k.set_contents_from_file(f)
 
-        # s3+dir
+        # s3+dir keys and contents
         b = conn.create_bucket(self.dir_bucket_name)
         for fname in ('index.json', '1', '2', '3', '4', '5', '6'):
             k = Key(b)

@@ -1,3 +1,5 @@
+import ConfigParser
+import StringIO
 from urlparse import urlparse
 
 from shavar.exceptions import MissingListDataError, NoDataError
@@ -10,21 +12,60 @@ from shavar.sources import (
 
 
 def includeme(config):
-    lists_to_serve = config.registry.settings.get('shavar.lists_served', [])
+    lists_to_serve = config.registry.settings.get('shavar.lists_served', None)
     if not lists_to_serve:
         raise ValueError("lists_served appears to be empty or missing "
                          "in the config \"%s\"!" % config.filename)
-
-    if isinstance(lists_to_serve, basestring):
-        lists_to_serve = [lists_to_serve]
+    try:
+        lists_to_serve_url = urlparse(lists_to_serve)
+    except TypeError, e:
+        raise ValueError('lists_served must be dir:// or s3+dir:// value')
+    lists_to_serve_scheme = lists_to_serve_url.scheme.lower()
+    list_configs = []
 
     config.registry['shavar.serving'] = {}
 
-    for lname in lists_to_serve:
+    if lists_to_serve_scheme == 'dir':
+        import os
+        list_config_dir = lists_to_serve_url.netloc + lists_to_serve_url.path
+        for list_config_file in os.listdir(list_config_dir):
+            if list_config_file.endswith(".ini"):
+                list_name = list_config_file[:-len(".ini")]
+                list_config = ConfigParser.ConfigParser()
+                list_config.readfp(open(
+                    os.path.join(list_config_dir, list_config_file)
+                ))
+                list_configs.append({'name': list_name, 'config': list_config})
+
+    elif lists_to_serve_scheme == 's3+dir':
+        import boto
+        from boto.exception import S3ResponseError
+
+        try:
+            conn = boto.connect_s3()
+            bucket = conn.get_bucket(lists_to_serve_url.netloc)
+        except S3ResponseError, e:
+                raise NoDataError("Could not find bucket \"%s\": %s" %
+                                  (lists_to_serve_url.netloc, e))
+        for list_key in bucket.get_all_keys():
+            list_key_name = list_key.key
+            list_name = list_key_name.rstrip('.ini')
+            list_ini = list_key.get_contents_as_string()
+            list_config = ConfigParser.ConfigParser()
+            list_config.readfp(StringIO.StringIO(list_ini))
+            list_configs.append({'name': list_name, 'config': list_config})
+
+    else:
+        raise ValueError('lists_served must be dir:// or s3+dir:// value')
+
+    for list_config in list_configs:
+        list_name = list_config['name']
+        list_config = list_config['config']
+
         # Make sure we have a refresh interval set for the data source for the
         # lists
         setting_name = 'refresh_check_interval'
-        settings = config.registry.settings.getsection(lname)
+        settings = dict(list_config.items(list_name))
         default = config.registry.settings.get('shavar.%s' %
                                                setting_name,
                                                10 * 60)
@@ -36,16 +77,20 @@ def includeme(config):
         #            'source': os.path.join(defaults.get('lists_root',
         #                                                ''), lname)}
 
-        type_ = settings.get('type', '')
+        type_ = list_config.get(list_name, 'type')
         if type_ == 'digest256':
-            list_ = Digest256(lname, settings['source'], settings)
+            list_ = Digest256(list_name, settings['source'], settings)
         elif type_ == 'shavar':
-            list_ = Shavar(lname, settings['source'], settings)
+            list_ = Shavar(list_name, settings['source'], settings)
         else:
-            raise ValueError('Unknown list type for "%s": "%s"' % (lname,
+            raise ValueError('Unknown list type for "%s": "%s"' % (list_name,
                                                                    type_))
 
-        config.registry['shavar.serving'][lname] = list_
+        config.registry['shavar.serving'][list_name] = list_
+
+    config.registry.settings['shavar.list_names_served'] = [
+        list['name'] for list in list_configs
+    ]
 
 
 def get_list(request, list_name):

@@ -22,7 +22,7 @@ class Source(object):
     def __init__(self, source_url, refresh_interval):
         self.source_url = source_url
         self.url = urlparse(self.source_url)
-        self.interval = refresh_interval
+        self.interval = int(refresh_interval)
         self.last_refresh = 0
         self.last_check = 0
         # Initialize with an empty data set so we can always continue to serve
