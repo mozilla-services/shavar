@@ -26,7 +26,7 @@ service easier to maintain and run. So if your project needs something more
 than lists of urls, you might look at another service like
 [Kinto](https://github.com/Kinto/kinto).
 
-If you just need a list of urls ...
+So, if you just need a list of urls ...
 
 1. [File an issue](https://github.com/mozilla-services/shavar/issues/new) in
 this repo, including a link back to any relevant bugzilla bug
@@ -43,6 +43,20 @@ this repo, including a link back to any relevant bugzilla bug
    to make shavar start serving the lists.
 5. When we verify that shavar is serving the lists to Firefox correctly, we
    will repeat steps 3-4 for production.
+
+#### QA
+
+When we add new lists to shavar,
+[Firefox Test Engineering](https://readthedocs.org/projects/firefox-test-engineering/)
+verifies that lists do not disrupt the server-side shavar service. We will
+always add the new lists to the staging server first, as described above.
+
+If you need help with client-side testing of Firefox behavior with the new
+list, contact the
+[SoftVision QA Team](https://wiki.mozilla.org/QA_SoftVision_Team). Typically,
+you will need to provide a set of new or updated testing prefs in the
+[`services-test/shavar/e2e-test/prefs.ini`](https://github.com/mozilla-services/services-test/blob/master/shavar/e2e-test/prefs.ini)
+file.
 
 ### Updating list contents
 
