@@ -22,3 +22,4 @@ WSGIProxy
 # currently experiencing syntax errors when you attempt to install it.
 unittest2==0.8.0
 webtest
+flake8
