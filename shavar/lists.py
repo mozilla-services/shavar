@@ -82,6 +82,10 @@ def includeme(config):
             list_ = Digest256(list_name, settings['source'], settings)
         elif type_ == 'shavar':
             list_ = Shavar(list_name, settings['source'], settings)
+        elif type_ == 'mlbf':
+            list_ = MultiLevelBlomFilterList(list_name,
+                                             settings['source'],
+                                             settings)
         else:
             raise ValueError('Unknown list type for "%s": "%s"' % (list_name,
                                                                    type_))
@@ -170,6 +174,80 @@ class SafeBrowsingList(object):
         except NoDataError, e:
             # FIXME log it
             raise e
+
+    def refresh(self):
+        self._source.refresh()
+
+    def delta(self, adds, subs):
+        """
+        Calculates the delta necessary for a given client to catch up to the
+        server's idea of "current"
+
+        This current iteration is very simplistic algorithm
+        """
+        current_adds, current_subs = self._source.list_chunks()
+
+        # FIXME Should we call issuperset() first to be sure we're not getting
+        # weird stuff from the request?
+        a_delta = current_adds.difference(adds)
+        s_delta = current_subs.difference(subs)
+        return sorted(a_delta), sorted(s_delta)
+
+    def fetch(self, add_chunks=[], sub_chunks=[]):
+        try:
+            details = self._source.fetch(add_chunks, sub_chunks)
+        except NoDataError:
+            details = {'adds': (), 'subs': ()}
+        details['type'] = self.type
+        return details
+
+    def fetch_adds(self, add_chunks):
+        return self.fetch(add_chunks, [])['adds']
+
+    def fetch_subs(self, sub_chunks):
+        return self.fetch([], sub_chunks)['subs']
+
+    def find_prefix(self, prefix):
+        # Don't bother looking for prefixes that aren't the right size
+        if len(prefix) != self.prefix_size:
+            return ()
+        return self._source.find_prefix(prefix)
+
+
+class MultiLevelBlomFilterList(object):
+    """
+    Manages comparisons and data freshness
+    """
+
+    def __init__(self, list_name, source_url, settings):
+        self.name = list_name
+        self.source_url = source_url
+        self.url = urlparse(source_url)
+        self.settings = settings
+
+        scheme = self.url.scheme.lower()
+        interval = settings.get('refresh_check_interval', 10 * 60)
+        if (scheme == 'file' or not (self.url.scheme and self.url.netloc)):
+            cls = FileSource
+        elif scheme == 's3+file':
+            cls = S3FileSource
+        elif scheme == 'dir':
+            cls = DirectorySource
+        elif scheme == 's3+dir':
+            cls = S3DirectorySource
+        else:
+            raise ValueError('Only local single files, local directories, S3 '
+                             'single files, and S3 directory sources are '
+                             'supported at this time')
+
+        self._source = cls(self.source_url, refresh_interval=interval)
+        '''
+        try:
+            self._source.load()
+        except NoDataError, e:
+            # FIXME log it
+            raise e
+        '''
 
     def refresh(self):
         self._source.refresh()
