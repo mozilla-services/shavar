@@ -110,7 +110,7 @@ class DataRefreshTest(ShavarTestCase):
         dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
         d = dumdum.registry.settings.get('shavar.refresh_check_interval')
         self.assertEqual(d, 29)
-        l = dumdum.registry['shavar.serving']['moz-abp-shavar']
-        self.assertEqual(l._source.interval, 29)
-        l = dumdum.registry['shavar.serving']['mozpub-track-digest256']
-        self.assertEqual(l._source.interval, 23)
+        abp = dumdum.registry['shavar.serving']['moz-abp-shavar']
+        self.assertEqual(abp._source.interval, 29)
+        track = dumdum.registry['shavar.serving']['mozpub-track-digest256']
+        self.assertEqual(track._source.interval, 23)

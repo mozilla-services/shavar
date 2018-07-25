@@ -20,12 +20,12 @@ VERSION_JSON = $(shell printf '{"commit":"%s","version":"%s","source":"%s"}' \
 all:	build
 
 build:
-	$(VIRTUALENV) --no-site-packages --distribute .
-	$(INSTALL) Distribute
+	$(VIRTUALENV) --no-site-packages .
+	easy_install distribute
 	$(INSTALL) pip
 	$(INSTALL) nose
 	$(INSTALL) flake8
-	$(INSTALL) -r requirements.txt
+	$(INSTALL) -r requirements-test.txt
 	$(PYTHON) ./setup.py develop
 
 test:
