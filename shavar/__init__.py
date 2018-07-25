@@ -1,4 +1,32 @@
+import logging
+import threading
+import time
+
+import shavar.lists
+
+
 __version__ = '0.7.0'
+DEFAULT_REFRESH_LISTS_DELAY = 600  # 10m
+logger = logging.getLogger('shavar')
+
+
+class RefreshListsConfigThread(threading.Thread):
+    def __init__(self, delay, config):
+        threading.Thread.__init__(self)
+        self.delay = delay
+        self.config = config
+
+    def run(self):
+        logger.info("Starting RefreshListsConfigThread")
+        refresh_lists_config(self.delay, self.config)
+
+
+def refresh_lists_config(delay, config):
+    while(delay):
+        time.sleep(delay)
+        logger.info("Refreshing lists config ...")
+        shavar.lists.includeme(config)
+        logger.info("Refreshing lists config done.")
 
 
 def includeme(config):
@@ -7,7 +35,7 @@ def includeme(config):
     config.include("mozsvc")
     config.include('pyramid_mako')
     # Have to get the lists loaded before the views
-    config.include("shavar.lists")
+    shavar.lists.includeme(config)
     config.include("shavar.views")
 
 
@@ -26,4 +54,13 @@ def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
     config = get_configurator(global_config, **settings)
-    return config.make_wsgi_app()
+    app = config.make_wsgi_app()
+    refreshListsConfigThread = RefreshListsConfigThread(
+        config.registry.settings.get(
+            'shavar.refresh_lists_delay', DEFAULT_REFRESH_LISTS_DELAY
+        ),
+        config
+    )
+    refreshListsConfigThread.daemon = True
+    refreshListsConfigThread.start()
+    return app

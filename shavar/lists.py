@@ -1,5 +1,6 @@
 import ConfigParser
 import StringIO
+import logging
 from urlparse import urlparse
 
 from shavar.exceptions import MissingListDataError, NoDataError
@@ -9,6 +10,9 @@ from shavar.sources import (
     S3DirectorySource,
     S3FileSource
 )
+
+
+logger = logging.getLogger('shavar')
 
 
 def includeme(config):
@@ -31,11 +35,16 @@ def includeme(config):
         for list_config_file in os.listdir(list_config_dir):
             if list_config_file.endswith(".ini"):
                 list_name = list_config_file[:-len(".ini")]
-                list_config = ConfigParser.ConfigParser()
-                list_config.readfp(open(
-                    os.path.join(list_config_dir, list_config_file)
-                ))
-                list_configs.append({'name': list_name, 'config': list_config})
+                try:
+                    list_config = ConfigParser.ConfigParser()
+                    list_config.readfp(open(
+                        os.path.join(list_config_dir, list_config_file)
+                    ))
+                    list_configs.append(
+                        {'name': list_name, 'config': list_config}
+                    )
+                except ConfigParser.NoSectionError, e:
+                    logger.error(e)
 
     elif lists_to_serve_scheme == 's3+dir':
         import boto
@@ -51,9 +60,12 @@ def includeme(config):
             list_key_name = list_key.key
             list_name = list_key_name.rstrip('.ini')
             list_ini = list_key.get_contents_as_string()
-            list_config = ConfigParser.ConfigParser()
-            list_config.readfp(StringIO.StringIO(list_ini))
-            list_configs.append({'name': list_name, 'config': list_config})
+            try:
+                list_config = ConfigParser.ConfigParser()
+                list_config.readfp(StringIO.StringIO(list_ini))
+                list_configs.append({'name': list_name, 'config': list_config})
+            except ConfigParser.NoSectionError, e:
+                logger.error(e)
 
     else:
         raise ValueError('lists_served must be dir:// or s3+dir:// value')
@@ -168,8 +180,7 @@ class SafeBrowsingList(object):
         try:
             self._source.load()
         except NoDataError, e:
-            # FIXME log it
-            raise e
+            logger.error(e)
 
     def refresh(self):
         self._source.refresh()
