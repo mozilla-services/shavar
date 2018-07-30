@@ -1,8 +1,16 @@
 language: python
 
 python:
-  - "2.6"
-  - "2.7"
+  - "2.7.15"
+
+before_install:
+  - sudo rm -f /etc/boto.cfg
+
+install:
+  - make build
+
+script:
+  - make test
 
 notifications:
   irc:
@@ -10,9 +18,3 @@ notifications:
       - "irc.mozilla.org#services-dev"
     use_notice: false
     skip_join: false
-
-install:
-  - make build
-
-script:
-  - make test
