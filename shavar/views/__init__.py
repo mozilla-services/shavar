@@ -112,7 +112,14 @@ def downloads_view(request):
                         % list_info.name)
             annotate_request(request, "shavar.downloads.unknown.list", 1)
             continue
-        provider, type_, format_ = list_info.name.split('-', 2)
+        if len(list_info.name.split('-', 2)) == 3:
+            provider, type_, format_ = list_info.name.split('-', 2)
+        else:
+            provider, format_ = list_info.name.split('-', 1)
+        try:
+            type_
+        except NameError:
+            type_ = "none"
         if not provider or not type_ or not format_:
             s = 'Unknown list format for "%s"; ignoring' % list_info.name
             logger.error(s)
