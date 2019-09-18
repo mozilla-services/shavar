@@ -108,8 +108,8 @@ def parse_gethash(request):
         prefix_len, payload_len = [int(x) for x in header.split(':', 1)]
     except ValueError:
         raise ParseError('Invalid prefix or payload size: "%s"' % header)
-    if ((payload_len % prefix_len != 0) or
-            (payload_len < prefix_len)):
+    if ((payload_len % prefix_len != 0)
+            or (payload_len < prefix_len)):
         raise ParseError("Payload length invalid: \"%d\"" % payload_len)
 
     prefix_total = payload_len / prefix_len
@@ -247,7 +247,7 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
         raise ParseError("Could not parse index file: %s" % e)
 
     if 'name' not in index:
-            raise ParseError("Incorrectly formatted index: missing list name")
+        raise ParseError("Incorrectly formatted index: missing list name")
 
     if 'chunks' not in index:
         raise ParseError("Incorrectly formatted index: missing chunks")

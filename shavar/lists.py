@@ -54,8 +54,8 @@ def includeme(config):
             conn = boto.connect_s3()
             bucket = conn.get_bucket(lists_to_serve_url.netloc)
         except S3ResponseError, e:
-                raise NoDataError("Could not find bucket \"%s\": %s" %
-                                  (lists_to_serve_url.netloc, e))
+            raise NoDataError("Could not find bucket \"%s\": %s" %
+                              (lists_to_serve_url.netloc, e))
         for list_key in bucket.get_all_keys():
             list_key_name = list_key.key
             list_name = list_key_name.rstrip('.ini')
