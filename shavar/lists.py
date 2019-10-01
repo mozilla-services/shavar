@@ -1,6 +1,8 @@
 import ConfigParser
 import StringIO
 import logging
+import requests
+from packaging import version
 from urlparse import urlparse
 
 from shavar.exceptions import MissingListDataError, NoDataError
@@ -104,6 +106,30 @@ def includeme(config):
         list_ = create_list(type_, list_name, settings)
         config.registry['shavar.serving'][list_name] = list_
 
+        versioned = (
+            list_config.has_option(list_name, 'versioned') and list_config.get(list_name, 'versioned')
+        )
+        if versioned:
+            resp = requests.get(GITHUB_API_URL + SHAVAR_PROD_LISTS_BRANCHES_PATH)
+            shavar_prod_lists_branches = resp.json()
+            for branch in shavar_prod_lists_branches:
+                branch_name = branch.get('name')
+                ver = version.parse(branch_name)
+                if isinstance(ver, version.Version):
+                    # Add version to list config to retrieve later
+                    # check if the version exists in S3?
+                    # change config to reflect verion branches
+                    versioned_source = settings['source'].replace(
+                        'tracking/', 'tracking/{}/'.format(branch_name))
+                    settings['source'] = versioned_source
+                    # get new list for the version
+                    list_ = create_list(type_, list_name, settings)
+                    versioned_list_name = '{0}-{1}'.format(branch_name, list_name)
+                    config.registry['shavar.serving'][versioned_list_name] = list_
+                    # revert settings
+                    original_source = settings['source'].replace(
+                        'tracking/{}/'.format(branch_name), 'tracking/')
+                    settings['source'] = original_source
     config.registry.settings['shavar.list_names_served'] = [
         list['name'] for list in list_configs
     ]
