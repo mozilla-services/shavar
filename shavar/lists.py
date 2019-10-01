@@ -15,6 +15,10 @@ from shavar.sources import (
 
 
 logger = logging.getLogger('shavar')
+GITHUB_API_URL = 'https://api.github.com'
+SHAVAR_PROD_LISTS_BRANCHES_PATH = (
+    '/repos/mozilla-services/shavar-prod-lists/branches'
+)
 
 
 def create_list(type_, list_name, settings):
