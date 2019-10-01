@@ -15,6 +15,17 @@ from shavar.sources import (
 logger = logging.getLogger('shavar')
 
 
+def create_list(type_, list_name, settings):
+    if type_ == 'digest256':
+        list_ = Digest256(list_name, settings['source'], settings)
+    elif type_ == 'shavar':
+        list_ = Shavar(list_name, settings['source'], settings)
+    else:
+        raise ValueError('Unknown list type for "%s": "%s"' % (list_name,
+                                                               type_))
+    return list_
+
+
 def includeme(config):
     lists_to_serve = config.registry.settings.get('shavar.lists_served', None)
     if not lists_to_serve:
@@ -90,14 +101,7 @@ def includeme(config):
         #                                                ''), lname)}
 
         type_ = list_config.get(list_name, 'type')
-        if type_ == 'digest256':
-            list_ = Digest256(list_name, settings['source'], settings)
-        elif type_ == 'shavar':
-            list_ = Shavar(list_name, settings['source'], settings)
-        else:
-            raise ValueError('Unknown list type for "%s": "%s"' % (list_name,
-                                                                   type_))
-
+        list_ = create_list(type_, list_name, settings)
         config.registry['shavar.serving'][list_name] = list_
 
     config.registry.settings['shavar.list_names_served'] = [
