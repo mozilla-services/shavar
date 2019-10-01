@@ -32,6 +32,10 @@ def create_list(type_, list_name, settings):
     return list_
 
 
+def get_versioned_list_name(version, list_name):
+    return '{0}-{1}'.format(version, list_name)
+
+
 def includeme(config):
     lists_to_serve = config.registry.settings.get('shavar.lists_served', None)
     if not lists_to_serve:
@@ -128,7 +132,8 @@ def includeme(config):
                     settings['source'] = versioned_source
                     # get new list for the version
                     list_ = create_list(type_, list_name, settings)
-                    versioned_list_name = '{0}-{1}'.format(branch_name, list_name)
+                    versioned_list_name = get_versioned_list_name(
+                        branch_name, list_name)
                     config.registry['shavar.serving'][versioned_list_name] = list_
                     # revert settings
                     original_source = settings['source'].replace(
