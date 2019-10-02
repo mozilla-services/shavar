@@ -54,6 +54,8 @@ def add_versionted_lists_to_registry(settings, config, type_, list_name):
             versioned_list_name = get_versioned_list_name(
                 branch_name, list_name)
             config.registry['shavar.serving'][versioned_list_name] = list_
+            config.registry['shavar.versioned_lists'][list_name].append(
+                branch_name)
             # revert settings
             original_source = settings['source'].replace(
                 'tracking/{}/'.format(branch_name), 'tracking/')
@@ -73,6 +75,7 @@ def includeme(config):
     list_configs = []
 
     config.registry['shavar.serving'] = {}
+    config.registry['shavar.versioned_lists'] = {}
 
     if lists_to_serve_scheme == 'dir':
         import os
@@ -137,6 +140,7 @@ def includeme(config):
         type_ = list_config.get(list_name, 'type')
         list_ = create_list(type_, list_name, settings)
         config.registry['shavar.serving'][list_name] = list_
+        config.registry['shavar.versioned_lists'][list_name] = []
 
         versioned = (
             list_config.has_option(list_name, 'versioned') and list_config.get(list_name, 'versioned')
