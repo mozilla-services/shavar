@@ -153,6 +153,30 @@ def includeme(config):
     ]
 
 
+def match_with_versioned_list(app_version, supported_versions, list_name):
+    ver = version.parse(app_version)
+    # need to be wary of ESR, it's considered legacy version in packaging
+    if not isinstance(ver, version.Version) or not supported_versions:
+        return list_name
+
+    default_ver = version.parse('69.0')
+    is_default_version = (
+        ver.release and ver.release[0] <= default_ver.release[0])
+    if is_default_version:
+        return get_versioned_list_name(default_ver.public, list_name)
+
+    if ver.public in supported_versions:
+        return get_versioned_list_name(ver.public, list_name)
+
+    # truncate version to be less specific to lazy match
+    truncate_ind = -1
+    while len(app_version) != abs(truncate_ind):
+        if app_version[:truncate_ind] in supported_versions:
+            return get_versioned_list_name(
+                app_version[:truncate_ind], list_name)
+        truncate_ind -= 1
+
+
 def get_list(request, list_name, app_ver):
     if list_name not in request.registry['shavar.serving']:
         errmsg = 'Not serving requested list "%s"' % (list_name,)
