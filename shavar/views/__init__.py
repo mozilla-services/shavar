@@ -119,7 +119,8 @@ def downloads_view(request):
             annotate_request(request, "shavar.downloads.unknown.format", 1)
             raise HTTPBadRequest(s)
 
-        sblist = get_list(request, list_info.name)
+        app_ver = request.params.get('appver')
+        sblist = get_list(request, list_info.name, app_ver)
 
         # Calculate delta
         to_add, to_sub = sblist.delta(list_info.adds, list_info.subs)
