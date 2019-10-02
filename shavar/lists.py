@@ -153,10 +153,13 @@ def includeme(config):
     ]
 
 
-def get_list(request, list_name):
+def get_list(request, list_name, app_ver):
     if list_name not in request.registry['shavar.serving']:
         errmsg = 'Not serving requested list "%s"' % (list_name,)
         raise MissingListDataError(errmsg)
+    all_supported_versions = request.registry['shavar.versioned_lists']
+    list_name = match_with_versioned_list(
+        app_ver, all_supported_versions.get(list_name), list_name)
     return request.registry['shavar.serving'][list_name]
 
 
