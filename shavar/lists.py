@@ -143,7 +143,8 @@ def includeme(config):
         config.registry['shavar.versioned_lists'][list_name] = []
 
         versioned = (
-            list_config.has_option(list_name, 'versioned') and list_config.get(list_name, 'versioned')
+            list_config.has_option(list_name, 'versioned')
+            and list_config.get(list_name, 'versioned')
         )
         if versioned:
             add_versionted_lists_to_registry(
