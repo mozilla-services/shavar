@@ -180,7 +180,7 @@ def match_with_versioned_list(app_version, supported_versions, list_name):
         truncate_ind -= 1
 
 
-def get_list(request, list_name, app_ver):
+def get_list(request, list_name, app_ver='none'):
     if list_name not in request.registry['shavar.serving']:
         errmsg = 'Not serving requested list "%s"' % (list_name,)
         raise MissingListDataError(errmsg)
