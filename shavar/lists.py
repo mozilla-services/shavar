@@ -158,23 +158,25 @@ def match_with_versioned_list(app_version, supported_versions, list_name):
     ver = version.parse(app_version)
     # need to be wary of ESR, it's considered legacy version in packaging
     if not isinstance(ver, version.Version) or not supported_versions:
-        return list_name
+        return list_name, None
 
     default_ver = version.parse('69.0')
     is_default_version = (
         ver.release and ver.release[0] <= default_ver.release[0])
     if is_default_version:
-        return get_versioned_list_name(default_ver.public, list_name)
+        return (
+            get_versioned_list_name(default_ver.public, list_name),
+            default_ver.public)
 
     if ver.public in supported_versions:
-        return get_versioned_list_name(ver.public, list_name)
+        return get_versioned_list_name(ver.public, list_name), ver.public
 
     # truncate version to be less specific to lazy match
     truncate_ind = -1
     while len(app_version) != abs(truncate_ind):
         if app_version[:truncate_ind] in supported_versions:
             return get_versioned_list_name(
-                app_version[:truncate_ind], list_name)
+                app_version[:truncate_ind], list_name), app_version[:truncate_ind]
         truncate_ind -= 1
 
 
@@ -183,9 +185,10 @@ def get_list(request, list_name, app_ver):
         errmsg = 'Not serving requested list "%s"' % (list_name,)
         raise MissingListDataError(errmsg)
     all_supported_versions = request.registry['shavar.versioned_lists']
-    list_name = match_with_versioned_list(
+    list_name, list_ver = match_with_versioned_list(
         app_ver, all_supported_versions.get(list_name), list_name)
-    return request.registry['shavar.serving'][list_name]
+    registry_val = request.registry['shavar.serving'][list_name]
+    return registry_val, list_ver
 
 
 def lookup_prefixes(request, prefixes):
