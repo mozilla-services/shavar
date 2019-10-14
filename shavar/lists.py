@@ -175,8 +175,9 @@ def match_with_versioned_list(app_version, supported_versions, list_name):
     truncate_ind = -1
     while len(app_version) != abs(truncate_ind):
         if app_version[:truncate_ind] in supported_versions:
-            return get_versioned_list_name(
-                app_version[:truncate_ind], list_name), app_version[:truncate_ind]
+            versioned_list_name = get_versioned_list_name(
+                app_version[:truncate_ind], list_name)
+            return versioned_list_name, app_version[:truncate_ind]
         truncate_ind -= 1
 
 
