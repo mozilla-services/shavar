@@ -36,7 +36,7 @@ def get_versioned_list_name(version, list_name):
     return '{0}-{1}'.format(version, list_name)
 
 
-def add_versionted_lists_to_registry(settings, config, type_, list_name):
+def add_versioned_lists_to_registry(settings, config, type_, list_name):
     resp = requests.get(GITHUB_API_URL + SHAVAR_PROD_LISTS_BRANCHES_PATH)
     shavar_prod_lists_branches = resp.json()
     for branch in shavar_prod_lists_branches:
@@ -147,7 +147,7 @@ def includeme(config):
             and list_config.get(list_name, 'versioned')
         )
         if versioned:
-            add_versionted_lists_to_registry(
+            add_versioned_lists_to_registry(
                 settings, config, type_, list_name)
     config.registry.settings['shavar.list_names_served'] = [
         list['name'] for list in list_configs
