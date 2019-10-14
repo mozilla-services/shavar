@@ -15,6 +15,7 @@ from shavar.sources import (
 
 
 logger = logging.getLogger('shavar')
+OLDEST_SUPPORTED_VERSION = '69.0'
 GITHUB_API_URL = 'https://api.github.com'
 SHAVAR_PROD_LISTS_BRANCHES_PATH = (
     '/repos/mozilla-services/shavar-prod-lists/branches'
@@ -160,7 +161,7 @@ def match_with_versioned_list(app_version, supported_versions, list_name):
     if not isinstance(ver, version.Version) or not supported_versions:
         return list_name, None
 
-    default_ver = version.parse('69.0')
+    default_ver = version.parse(OLDEST_SUPPORTED_VERSION)
     is_default_version = (
         ver.release and ver.release[0] <= default_ver.release[0])
     if is_default_version:
