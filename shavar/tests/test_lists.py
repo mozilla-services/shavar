@@ -13,7 +13,7 @@ class ListsTest(ShavarTestCase):
 
     def test_0_get_list(self):
         dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
-        sblist = get_list(dumdum, 'mozpub-track-digest256')
+        sblist, _ = get_list(dumdum, 'mozpub-track-digest256')
         self.assertIsInstance(sblist, Digest256)
 
     def test_1_lookup_prefixes(self):
@@ -28,7 +28,7 @@ class DeltaListsTest(ShavarTestCase):
 
     def test_2_delta(self):
         dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
-        sblist = get_list(dumdum, 'mozpub-track-digest256')
+        sblist, _ = get_list(dumdum, 'mozpub-track-digest256')
         # By way of explanation:
         #
         # In the data file.
@@ -99,7 +99,7 @@ class S3SourceListsTest(ShavarTestCase):
         # Basically the same tests in test_0_get_list and test_2_delta above
         dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
         for list_ in ('mozpub-track-digest256', 'testpub-bananas-digest256'):
-            sblist = get_list(dumdum, list_)
+            sblist, _ = get_list(dumdum, list_)
             self.assertIsInstance(sblist, Digest256)
             self.assertEqual(sblist.delta([1, 2], [3]), ([4, 5], [6]))
 
