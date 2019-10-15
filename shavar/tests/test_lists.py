@@ -5,7 +5,13 @@ import boto
 from boto.s3.key import Key
 from moto import mock_s3
 
-from shavar.lists import get_list, lookup_prefixes, Digest256
+from shavar.lists import (
+    get_list,
+    lookup_prefixes,
+    Digest256,
+    match_with_versioned_list,
+    get_versioned_list_name
+)
 from shavar.tests.base import dummy, hashes, ShavarTestCase, test_file
 
 
@@ -20,6 +26,52 @@ class ListsTest(ShavarTestCase):
         dumdum = dummy(body='4:4\n%s' % hashes['goog'][:4], path='/gethash')
         prefixes = lookup_prefixes(dumdum, [self.hg[:4]])
         self.assertEqual(prefixes, {'moz-abp-shavar': {17: [hashes['goog']]}})
+
+    def test_2_get_list_version_not_specified(self):
+        dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
+        sblist, list_ver = get_list(dumdum, 'mozpub-track-digest256')
+        self.assertIsNone(list_ver)
+
+    def test_3_get_list_list_not_served(self):
+        dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
+        # sblist, list_ver = get_list(dumdum, 'this-list-dne')
+        self.assertRaises(MissingListDataError, get_list, (dumdum, 'this-list-dne'))
+
+    def test_4_match_with_versioned_list_version_lower_than_supported(self):
+        list_name, list_ver = match_with_versioned_list(
+            '68.0', ['70.0', '71.0'], 'mozpub-track-digest256')
+        self.assertEquals(
+            (list_name, list_ver),
+            ('69.0-mozpub-track-digest256', '69.0')
+        )
+
+    def test_5_match_with_versioned_list_version_exact_match(self):
+        list_name, list_ver = match_with_versioned_list(
+            '70.0', ['70.0', '71.0'], 'mozpub-track-digest256')
+        self.assertEquals(
+            (list_name, list_ver),
+            ('70.0-mozpub-track-digest256', '70.0')
+        )
+
+    def test_6_match_with_versioned_list_version_fuzzy_match(self):
+        list_name, list_ver = match_with_versioned_list(
+            '71.0a1', ['70.0', '71.0'], 'mozpub-track-digest256')
+        self.assertEquals(
+            (list_name, list_ver),
+            ('71.0-mozpub-track-digest256', '71.0')
+        )
+
+    def test_7_match_with_versioned_list_version_fuzzy_match(self):
+        list_name, list_ver = match_with_versioned_list(
+            '72.0a1', ['70.0', '71.0'], 'mozpub-track-digest256')
+        self.assertEquals(
+            (list_name, list_ver),
+            ('mozpub-track-digest256', None)
+        )
+
+    def test_8_get_versioned_list_name(self):
+        list_name = get_versioned_list_name('70.0', 'mozpub-track-digest256')
+        self.assertEquals(list_name, '70.0-mozpub-track-digest256')
 
 
 class DeltaListsTest(ShavarTestCase):
