@@ -5,6 +5,7 @@ import boto
 from boto.s3.key import Key
 from moto import mock_s3
 
+from shavar.exceptions import MissingListDataError
 from shavar.lists import (
     get_list,
     lookup_prefixes,
@@ -35,7 +36,9 @@ class ListsTest(ShavarTestCase):
     def test_3_get_list_list_not_served(self):
         dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
         # sblist, list_ver = get_list(dumdum, 'this-list-dne')
-        self.assertRaises(MissingListDataError, get_list, (dumdum, 'this-list-dne'))
+        self.assertRaises(
+            MissingListDataError, get_list, dumdum, 'this-list-dne'
+        )
 
     def test_4_match_with_versioned_list_version_lower_than_supported(self):
         list_name, list_ver = match_with_versioned_list(
