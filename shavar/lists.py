@@ -181,6 +181,9 @@ def match_with_versioned_list(app_version, supported_versions, list_name):
             return versioned_list_name, app_version[:truncate_ind]
         truncate_ind -= 1
 
+    # if none of the supported versions match, match with master
+    return list_name, None
+
 
 def get_list(request, list_name, app_ver='none'):
     if list_name not in request.registry['shavar.serving']:
