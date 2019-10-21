@@ -37,16 +37,13 @@ def get_versioned_list_name(version, list_name):
     return '{0}-{1}'.format(version, list_name)
 
 
-def add_versioned_lists_to_registry(settings, config, type_, list_name):
-    resp = requests.get(GITHUB_API_URL + SHAVAR_PROD_LISTS_BRANCHES_PATH)
-    shavar_prod_lists_branches = resp.json()
+def add_versioned_lists_to_registry(
+        settings, config, type_, list_name, shavar_prod_lists_branches):
     for branch in shavar_prod_lists_branches:
         branch_name = branch.get('name')
         ver = version.parse(branch_name)
         if isinstance(ver, version.Version):
-            # Add version to list config to retrieve later
-            # check if the version exists in S3?
-            # change config to reflect verion branches
+            # change config to reflect version branches
             versioned_source = settings['source'].replace(
                 'tracking/', 'tracking/{}/'.format(branch_name))
             settings['source'] = versioned_source
@@ -119,6 +116,8 @@ def includeme(config):
     else:
         raise ValueError('lists_served must be dir:// or s3+dir:// value')
 
+    resp = requests.get(GITHUB_API_URL + SHAVAR_PROD_LISTS_BRANCHES_PATH)
+    shavar_prod_lists_branches = resp.json()
     for list_config in list_configs:
         list_name = list_config['name']
         list_config = list_config['config']
@@ -149,7 +148,7 @@ def includeme(config):
         )
         if versioned:
             add_versioned_lists_to_registry(
-                settings, config, type_, list_name)
+                settings, config, type_, list_name, shavar_prod_lists_branches)
     config.registry.settings['shavar.list_names_served'] = [
         list['name'] for list in list_configs
     ]
