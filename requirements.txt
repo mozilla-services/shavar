@@ -6,6 +6,7 @@ pastescript==2.0.2
 pyramid==1.9
 pyramid_chameleon==0.3
 pyramid_debugtoolbar==2.1
+requests==2.22.0
 raven==5.12.0
 statsd==3.0
 waitress==1.0.2
