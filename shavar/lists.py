@@ -158,18 +158,16 @@ def match_with_versioned_list(app_version, supported_versions, list_name):
     ver = version.parse(app_version)
     # need to be wary of ESR, it's considered legacy version in packaging
     if not isinstance(ver, version.Version) or not supported_versions:
-        return list_name, None
+        return list_name
 
     default_ver = version.parse(OLDEST_SUPPORTED_VERSION)
     is_default_version = (
         ver.release and ver.release[0] <= default_ver.release[0])
     if is_default_version:
-        return (
-            get_versioned_list_name(default_ver.public, list_name),
-            default_ver.public)
+        return get_versioned_list_name(default_ver.public, list_name)
 
     if ver.public in supported_versions:
-        return get_versioned_list_name(ver.public, list_name), ver.public
+        return get_versioned_list_name(ver.public, list_name)
 
     # truncate version to be less specific to lazy match
     truncate_ind = -1
@@ -177,11 +175,11 @@ def match_with_versioned_list(app_version, supported_versions, list_name):
         if app_version[:truncate_ind] in supported_versions:
             versioned_list_name = get_versioned_list_name(
                 app_version[:truncate_ind], list_name)
-            return versioned_list_name, app_version[:truncate_ind]
+            return versioned_list_name
         truncate_ind -= 1
 
     # if none of the supported versions match, match with master
-    return list_name, None
+    return list_name
 
 
 def get_list(request, list_name, app_ver='none'):
@@ -189,10 +187,10 @@ def get_list(request, list_name, app_ver='none'):
         errmsg = 'Not serving requested list "%s"' % (list_name,)
         raise MissingListDataError(errmsg)
     all_supported_versions = request.registry['shavar.versioned_lists']
-    list_name, list_ver = match_with_versioned_list(
+    list_name = match_with_versioned_list(
         app_ver, all_supported_versions.get(list_name), list_name)
     registry_val = request.registry['shavar.serving'][list_name]
-    return registry_val, list_ver
+    return registry_val
 
 
 def lookup_prefixes(request, prefixes):
