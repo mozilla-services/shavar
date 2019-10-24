@@ -30,13 +30,11 @@ class ListsTest(ShavarTestCase):
 
     def test_2_get_list_list_not_served(self):
         dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
-        sblist = get_list(dumdum, 'this-list-dne')
         self.assertRaises(
             MissingListDataError, get_list, dumdum, 'this-list-dne'
         )
 
     def test_3_match_with_versioned_list_version_not_specified(self):
-        dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
         list_name = match_with_versioned_list(
             'none', ['70.0', '71.0'], 'mozpub-track-digest256')
         self.assertEquals(list_name, 'mozpub-track-digest256')
