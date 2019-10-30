@@ -32,7 +32,7 @@ class Source(object):
         self.no_data = True
 
     def load(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def _populate_chunks(self, fp, parser_func, *args, **kwargs):
         try:
@@ -109,8 +109,8 @@ class DirectorySource(FileSource):
     index_name = 'index.json'
 
     def __init__(self, source_url, refresh_interval):
-        if (source_url[-1] == '/' or
-                source_url[-len(self.index_name):] != self.index_name):
+        if (source_url[-1] == '/'
+                or source_url[-len(self.index_name):] != self.index_name):
             source_url = posixpath.join(source_url, self.index_name)
 
         # Relative path to a directory, tweak slightly so urlparse will parse
@@ -180,8 +180,8 @@ class S3DirectorySource(S3FileSource):
     index_name = 'index.json'
 
     def __init__(self, source_url, refresh_interval):
-        if (source_url[-1] == '/' or
-                source_url[-len(self.index_name):] != self.index_name):
+        if (source_url[-1] == '/'
+                or source_url[-len(self.index_name):] != self.index_name):
             source_url = posixpath.join(source_url, self.index_name)
         super(S3DirectorySource, self).__init__(source_url,
                                                 refresh_interval)

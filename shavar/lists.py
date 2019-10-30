@@ -1,6 +1,8 @@
 import ConfigParser
 import StringIO
 import logging
+import requests
+from packaging import version
 from urlparse import urlparse
 
 from shavar.exceptions import MissingListDataError, NoDataError
@@ -13,6 +15,49 @@ from shavar.sources import (
 
 
 logger = logging.getLogger('shavar')
+OLDEST_SUPPORTED_VERSION = '69.0'
+GITHUB_API_URL = 'https://api.github.com'
+SHAVAR_PROD_LISTS_BRANCHES_PATH = (
+    '/repos/mozilla-services/shavar-prod-lists/branches'
+)
+
+
+def create_list(type_, list_name, settings):
+    if type_ == 'digest256':
+        list_ = Digest256(list_name, settings['source'], settings)
+    elif type_ == 'shavar':
+        list_ = Shavar(list_name, settings['source'], settings)
+    else:
+        raise ValueError('Unknown list type for "%s": "%s"' % (list_name,
+                                                               type_))
+    return list_
+
+
+def get_versioned_list_name(version, list_name):
+    return '{0}-{1}'.format(version, list_name)
+
+
+def add_versioned_lists_to_registry(
+        settings, config, type_, list_name, shavar_prod_lists_branches):
+    for branch in shavar_prod_lists_branches:
+        branch_name = branch.get('name')
+        ver = version.parse(branch_name)
+        if isinstance(ver, version.Version):
+            # change config to reflect version branches
+            versioned_source = settings['source'].replace(
+                'tracking/', 'tracking/{}/'.format(branch_name))
+            settings['source'] = versioned_source
+            # get new list for the version
+            list_ = create_list(type_, list_name, settings)
+            versioned_list_name = get_versioned_list_name(
+                branch_name, list_name)
+            config.registry['shavar.serving'][versioned_list_name] = list_
+            config.registry['shavar.versioned_lists'][list_name].append(
+                branch_name)
+            # revert settings
+            original_source = settings['source'].replace(
+                'tracking/{}/'.format(branch_name), 'tracking/')
+            settings['source'] = original_source
 
 
 def includeme(config):
@@ -28,6 +73,7 @@ def includeme(config):
     list_configs = []
 
     config.registry['shavar.serving'] = {}
+    config.registry['shavar.versioned_lists'] = {}
 
     if lists_to_serve_scheme == 'dir':
         import os
@@ -54,8 +100,8 @@ def includeme(config):
             conn = boto.connect_s3()
             bucket = conn.get_bucket(lists_to_serve_url.netloc)
         except S3ResponseError, e:
-                raise NoDataError("Could not find bucket \"%s\": %s" %
-                                  (lists_to_serve_url.netloc, e))
+            raise NoDataError("Could not find bucket \"%s\": %s" %
+                              (lists_to_serve_url.netloc, e))
         for list_key in bucket.get_all_keys():
             list_key_name = list_key.key
             list_name = list_key_name.rstrip('.ini')
@@ -70,6 +116,8 @@ def includeme(config):
     else:
         raise ValueError('lists_served must be dir:// or s3+dir:// value')
 
+    resp = requests.get(GITHUB_API_URL + SHAVAR_PROD_LISTS_BRANCHES_PATH)
+    shavar_prod_lists_branches = resp.json()
     for list_config in list_configs:
         list_name = list_config['name']
         list_config = list_config['config']
@@ -90,26 +138,59 @@ def includeme(config):
         #                                                ''), lname)}
 
         type_ = list_config.get(list_name, 'type')
-        if type_ == 'digest256':
-            list_ = Digest256(list_name, settings['source'], settings)
-        elif type_ == 'shavar':
-            list_ = Shavar(list_name, settings['source'], settings)
-        else:
-            raise ValueError('Unknown list type for "%s": "%s"' % (list_name,
-                                                                   type_))
-
+        list_ = create_list(type_, list_name, settings)
         config.registry['shavar.serving'][list_name] = list_
+        config.registry['shavar.versioned_lists'][list_name] = []
 
+        versioned = (
+            list_config.has_option(list_name, 'versioned')
+            and list_config.get(list_name, 'versioned')
+        )
+        if versioned:
+            add_versioned_lists_to_registry(
+                settings, config, type_, list_name, shavar_prod_lists_branches)
     config.registry.settings['shavar.list_names_served'] = [
         list['name'] for list in list_configs
     ]
 
 
-def get_list(request, list_name):
+def match_with_versioned_list(app_version, supported_versions, list_name):
+    ver = version.parse(app_version)
+    # need to be wary of ESR, it's considered legacy version in packaging
+    if not isinstance(ver, version.Version) or not supported_versions:
+        return list_name
+
+    default_ver = version.parse(OLDEST_SUPPORTED_VERSION)
+    is_default_version = (
+        ver.release and ver.release[0] <= default_ver.release[0])
+    if is_default_version:
+        return get_versioned_list_name(default_ver.public, list_name)
+
+    if ver.public in supported_versions:
+        return get_versioned_list_name(ver.public, list_name)
+
+    # truncate version to be less specific to lazy match
+    truncate_ind = -1
+    while len(app_version) != abs(truncate_ind):
+        if app_version[:truncate_ind] in supported_versions:
+            versioned_list_name = get_versioned_list_name(
+                app_version[:truncate_ind], list_name)
+            return versioned_list_name
+        truncate_ind -= 1
+
+    # if none of the supported versions match, match with master
+    return list_name
+
+
+def get_list(request, list_name, app_ver='none'):
     if list_name not in request.registry['shavar.serving']:
         errmsg = 'Not serving requested list "%s"' % (list_name,)
         raise MissingListDataError(errmsg)
-    return request.registry['shavar.serving'][list_name]
+    all_supported_versions = request.registry['shavar.versioned_lists']
+    list_name = match_with_versioned_list(
+        app_ver, all_supported_versions.get(list_name), list_name)
+    registry_val = request.registry['shavar.serving'][list_name]
+    return registry_val
 
 
 def lookup_prefixes(request, prefixes):
