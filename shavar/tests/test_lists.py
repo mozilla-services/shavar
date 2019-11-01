@@ -35,9 +35,12 @@ class ListsTest(ShavarTestCase):
         )
 
     def test_3_match_with_versioned_list_version_not_specified(self):
-        list_name = match_with_versioned_list(
+        list_name, list_ver = match_with_versioned_list(
             'none', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(list_name, 'mozpub-track-digest256')
+        self.assertEquals(
+            (list_name, list_ver),
+            ('mozpub-track-digest256', None)
+        )
 
     def test_4_match_with_versioned_list_version_lower_than_supported(self):
         list_name, list_ver = match_with_versioned_list(
