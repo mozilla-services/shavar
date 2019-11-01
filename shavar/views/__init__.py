@@ -120,7 +120,7 @@ def downloads_view(request):
             raise HTTPBadRequest(s)
 
         app_ver = str(request.GET['appver'])
-        sblist = get_list(request, list_info.name, app_ver)
+        sblist, list_ver = get_list(request, list_info.name, app_ver)
 
         # Calculate delta
         to_add, to_sub = sblist.delta(list_info.adds, list_info.subs)
@@ -132,7 +132,8 @@ def downloads_view(request):
         # Fetch the appropriate chunks
         resp_payload['lists'][list_info.name] = {
             'sblist': sblist,
-            'ldata': sblist.fetch(to_add, to_sub)
+            'ldata': sblist.fetch(to_add, to_sub),
+            'list_ver': list_ver
         }
 
         # Not publishing deltas for this list?  Delete all previous chunks to
@@ -162,6 +163,7 @@ def format_downloads(request, resp_payload):
     for lname, ldict in resp_payload['lists'].iteritems():
         ldata = ldict['ldata']
         sblist = ldict['sblist']
+        list_ver = ldict['list_ver']
         # Support for the previous, broken method of responding to
         # digest256 type lists
         be_broken = sblist.settings.get(
@@ -192,7 +194,12 @@ def format_downloads(request, resp_payload):
                 baseurl = sblist.settings.get('redirect_url_base')
                 if not baseurl:
                     baseurl = _setting(request, 'shavar', 'redirect_url_base')
-                fudge = os.path.join(baseurl, lname, "%d" % chunk.number)
+
+                if list_ver is not None:
+                    fudge = os.path.join(
+                        baseurl, lname, list_ver, "%d" % chunk.number)
+                else:
+                    fudge = os.path.join(baseurl, lname, "%d" % chunk.number)
                 data = 'u:{0}\n'.format(fudge)
             body += data
     return body
