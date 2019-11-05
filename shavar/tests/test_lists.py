@@ -20,7 +20,7 @@ class ListsTest(ShavarTestCase):
 
     def test_0_get_list(self):
         dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
-        sblist = get_list(dumdum, 'mozpub-track-digest256')
+        sblist, _ = get_list(dumdum, 'mozpub-track-digest256')
         self.assertIsInstance(sblist, Digest256)
 
     def test_1_lookup_prefixes(self):
@@ -35,33 +35,53 @@ class ListsTest(ShavarTestCase):
         )
 
     def test_3_match_with_versioned_list_version_not_specified(self):
-        list_name = match_with_versioned_list(
+        list_name, list_ver = match_with_versioned_list(
             'none', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(list_name, 'mozpub-track-digest256')
+        self.assertEquals(
+            (list_name, list_ver),
+            ('mozpub-track-digest256', None)
+        )
 
     def test_4_match_with_versioned_list_version_lower_than_supported(self):
-        list_name = match_with_versioned_list(
+        list_name, list_ver = match_with_versioned_list(
             '68.0', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(list_name, '69.0-mozpub-track-digest256')
+        self.assertEquals(
+            (list_name, list_ver),
+            ('69.0-mozpub-track-digest256', '69.0')
+        )
 
     def test_5_match_with_versioned_list_version_exact_match(self):
-        list_name = match_with_versioned_list(
+        list_name, list_ver = match_with_versioned_list(
             '70.0', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(list_name, '70.0-mozpub-track-digest256')
+        self.assertEquals(
+            (list_name, list_ver),
+            ('70.0-mozpub-track-digest256', '70.0')
+        )
 
     def test_6_match_with_versioned_list_version_fuzzy_match(self):
-        list_name = match_with_versioned_list(
+        list_name, list_ver = match_with_versioned_list(
             '71.0a1', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(list_name, '71.0-mozpub-track-digest256')
+        self.assertEquals(
+            (list_name, list_ver),
+            ('71.0-mozpub-track-digest256', '71.0')
+        )
 
     def test_7_match_with_versioned_list_version_fuzzy_match(self):
-        list_name = match_with_versioned_list(
+        list_name, list_ver = match_with_versioned_list(
             '72.0a1', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(list_name, 'mozpub-track-digest256')
+        self.assertEquals(
+            (list_name, list_ver),
+            ('mozpub-track-digest256', None)
+        )
 
     def test_8_get_versioned_list_name(self):
         list_name = get_versioned_list_name('70.0', 'mozpub-track-digest256')
         self.assertEquals(list_name, '70.0-mozpub-track-digest256')
+
+    def test_9_get_list_version_not_specified(self):
+        dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
+        sblist, list_ver = get_list(dumdum, 'mozpub-track-digest256')
+        self.assertIsNone(list_ver)
 
 
 class DeltaListsTest(ShavarTestCase):
@@ -70,7 +90,7 @@ class DeltaListsTest(ShavarTestCase):
 
     def test_2_delta(self):
         dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
-        sblist = get_list(dumdum, 'mozpub-track-digest256')
+        sblist, _ = get_list(dumdum, 'mozpub-track-digest256')
         # By way of explanation:
         #
         # In the data file.
@@ -141,7 +161,7 @@ class S3SourceListsTest(ShavarTestCase):
         # Basically the same tests in test_0_get_list and test_2_delta above
         dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
         for list_ in ('mozpub-track-digest256', 'testpub-bananas-digest256'):
-            sblist = get_list(dumdum, list_)
+            sblist, _ = get_list(dumdum, list_)
             self.assertIsInstance(sblist, Digest256)
             self.assertEqual(sblist.delta([1, 2], [3]), ([4, 5], [6]))
 
