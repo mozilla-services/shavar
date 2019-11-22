@@ -179,6 +179,12 @@ def match_with_versioned_list(app_version, supported_versions, list_name):
             return versioned_list_name, app_version[:truncate_ind]
         truncate_ind -= 1
 
+    # get the major version and match to that
+    major_ver = str(float(ver.release[0]))
+    if major_ver in supported_versions:
+        versioned_list_name = get_versioned_list_name(major_ver, list_name)
+        return versioned_list_name, major_ver
+
     # if none of the supported versions match, match with master
     return list_name, None
 
