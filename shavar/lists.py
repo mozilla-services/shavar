@@ -38,7 +38,7 @@ def get_versioned_list_name(version, list_name):
 
 
 def add_versioned_lists_to_registry(
-        settings, config, type_, list_name, shavar_prod_lists_branches):
+        settings, serving, ver_lists, type_, list_name, shavar_prod_lists_branches):
     for branch in shavar_prod_lists_branches:
         branch_name = branch.get('name')
         ver = version.parse(branch_name)
@@ -51,9 +51,8 @@ def add_versioned_lists_to_registry(
             list_ = create_list(type_, list_name, settings)
             versioned_list_name = get_versioned_list_name(
                 branch_name, list_name)
-            config.registry['shavar.serving'][versioned_list_name] = list_
-            config.registry['shavar.versioned_lists'][list_name].append(
-                branch_name)
+            serving[versioned_list_name] = list_
+            ver_lists[list_name].append(branch_name)
             # revert settings
             original_source = settings['source'].replace(
                 'tracking/{}/'.format(branch_name), 'tracking/')
@@ -72,8 +71,8 @@ def includeme(config):
     lists_to_serve_scheme = lists_to_serve_url.scheme.lower()
     list_configs = []
 
-    config.registry['shavar.serving'] = {}
-    config.registry['shavar.versioned_lists'] = {}
+    serving = {}
+    ver_lists = {}
 
     if lists_to_serve_scheme == 'dir':
         import os
@@ -139,8 +138,8 @@ def includeme(config):
 
         type_ = list_config.get(list_name, 'type')
         list_ = create_list(type_, list_name, settings)
-        config.registry['shavar.serving'][list_name] = list_
-        config.registry['shavar.versioned_lists'][list_name] = []
+        serving[list_name] = list_
+        ver_lists[list_name] = []
 
         versioned = (
             list_config.has_option(list_name, 'versioned')
@@ -148,7 +147,12 @@ def includeme(config):
         )
         if versioned:
             add_versioned_lists_to_registry(
-                settings, config, type_, list_name, shavar_prod_lists_branches)
+                settings, serving, ver_lists, type_,
+                list_name, shavar_prod_lists_branches
+            )
+
+    config.registry['shavar.serving'] = serving
+    config.registry['shavar.versioned_lists'] = ver_lists
     config.registry.settings['shavar.list_names_served'] = [
         list['name'] for list in list_configs
     ]
