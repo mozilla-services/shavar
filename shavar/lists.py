@@ -38,7 +38,9 @@ def get_versioned_list_name(version, list_name):
 
 
 def add_versioned_lists_to_registry(
-        settings, serving, ver_lists, type_, list_name, shavar_prod_lists_branches):
+        settings, serving, ver_lists, type_, list_name,
+        shavar_prod_lists_branches
+):
     for branch in shavar_prod_lists_branches:
         branch_name = branch.get('name')
         ver = version.parse(branch_name)
