@@ -1,8 +1,9 @@
+---
 version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:2.7
+      - image: circleci/python:2.7.17-stretch
     steps:
       - checkout
       - setup_remote_docker
@@ -21,6 +22,12 @@ jobs:
           command: |
             docker info
             docker build -t app:build .
+      - run:
+          name: Test
+          command: |
+            docker run -d -p 8080:8080 --name shavar-test app:build START
+            sleep 20
+            docker exec shavar-test /bin/sh -c 'curl -d " " --retry 2 --retry-delay 2 --connect-timeout 10 -m 11 -v http://127.0.0.1:8080/list?client=foo&appver=1&pver=2.2'
       - run:
           name: Push
           command: |
