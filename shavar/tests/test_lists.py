@@ -83,6 +83,14 @@ class ListsTest(ShavarTestCase):
         sblist, list_ver = get_list(dumdum, 'mozpub-track-digest256')
         self.assertIsNone(list_ver)
 
+    def test_10_match_with_versioned_list_major_version(self):
+        list_name, list_ver = match_with_versioned_list(
+            '71.1', ['70.0', '71.0'], 'mozpub-track-digest256')
+        self.assertEquals(
+            (list_name, list_ver),
+            ('71.0-mozpub-track-digest256', '71.0')
+        )
+
 
 class DeltaListsTest(ShavarTestCase):
 
