@@ -45,9 +45,15 @@ def add_versioned_lists_to_registry(
         branch_name = branch.get('name')
         ver = version.parse(branch_name)
         if isinstance(ver, version.Version):
+            if 'entity/' in settings['source']:
+                original_path = 'entity/'
+                versioned_path = 'entity/{}/'
+            else:
+                original_path = 'tracking/'
+                versioned_path = 'tracking/{}/'
             # change config to reflect version branches
             versioned_source = settings['source'].replace(
-                'tracking/', 'tracking/{}/'.format(branch_name))
+                original_path, versioned_path.format(branch_name))
             settings['source'] = versioned_source
             # get new list for the version
             list_ = create_list(type_, list_name, settings)
@@ -57,7 +63,7 @@ def add_versioned_lists_to_registry(
             ver_lists[list_name].append(branch_name)
             # revert settings
             original_source = settings['source'].replace(
-                'tracking/{}/'.format(branch_name), 'tracking/')
+                versioned_path.format(branch_name), original_path)
             settings['source'] = original_source
 
 
