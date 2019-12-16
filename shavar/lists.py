@@ -37,6 +37,12 @@ def get_versioned_list_name(version, list_name):
     return '{0}-{1}'.format(version, list_name)
 
 
+def get_original_and_versioned_paths(source):
+    if 'entity/' in source:
+        return 'entity/', 'entity/{}/'
+    return 'tracking/', 'tracking/{}'
+
+
 def add_versioned_lists_to_registry(
         settings, serving, ver_lists, type_, list_name,
         shavar_prod_lists_branches
@@ -45,9 +51,12 @@ def add_versioned_lists_to_registry(
         branch_name = branch.get('name')
         ver = version.parse(branch_name)
         if isinstance(ver, version.Version):
+            original_path, versioned_path = get_original_and_versioned_paths(
+                settings['source']
+            )
             # change config to reflect version branches
             versioned_source = settings['source'].replace(
-                'tracking/', 'tracking/{}/'.format(branch_name))
+                original_path, versioned_path.format(branch_name))
             settings['source'] = versioned_source
             # get new list for the version
             list_ = create_list(type_, list_name, settings)
@@ -57,7 +66,7 @@ def add_versioned_lists_to_registry(
             ver_lists[list_name].append(branch_name)
             # revert settings
             original_source = settings['source'].replace(
-                'tracking/{}/'.format(branch_name), 'tracking/')
+                versioned_path.format(branch_name), original_path)
             settings['source'] = original_source
 
 
