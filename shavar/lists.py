@@ -40,7 +40,7 @@ def get_versioned_list_name(version, list_name):
 def get_original_and_versioned_paths(source):
     if 'entity/' in source:
         return 'entity/', 'entity/{}/'
-    return 'tracking/', 'tracking/{}'
+    return 'tracking/', 'tracking/{}/'
 
 
 def add_versioned_lists_to_registry(
