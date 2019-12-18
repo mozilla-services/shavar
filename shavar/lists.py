@@ -60,6 +60,11 @@ def add_versioned_lists_to_registry(
             settings['source'] = versioned_source
             # get new list for the version
             list_ = create_list(type_, list_name, settings)
+            try:
+                list_._source.load()
+            except NoDataError, e:
+                # chunk file not found so it should not be served by Shavar
+                continue
             versioned_list_name = get_versioned_list_name(
                 branch_name, list_name)
             serving[versioned_list_name] = list_
