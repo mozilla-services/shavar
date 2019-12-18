@@ -63,7 +63,8 @@ def add_versioned_lists_to_registry(
             try:
                 list_._source.load()
             except NoDataError:
-                err_msg = ('Skipping {0} version support for {1} '
+                err_msg = (
+                    'Skipping {0} version support for {1} '
                     'since the file does not exist in S3'
                 )
                 logger.error(err_msg.format(ver, list_name))
