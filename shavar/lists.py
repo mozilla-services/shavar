@@ -60,6 +60,15 @@ def add_versioned_lists_to_registry(
             settings['source'] = versioned_source
             # get new list for the version
             list_ = create_list(type_, list_name, settings)
+            try:
+                list_._source.load()
+            except NoDataError:
+                err_msg = (
+                    'Skipping {0} version support for {1} '
+                    'since the file does not exist in S3'
+                )
+                logger.error(err_msg.format(ver, list_name))
+                continue
             versioned_list_name = get_versioned_list_name(
                 branch_name, list_name)
             serving[versioned_list_name] = list_
