@@ -9,7 +9,7 @@ pyramid_debugtoolbar==2.1
 requests==2.22.0
 raven==5.12.0
 statsd==3.0
-waitress==1.0.2
+waitress==1.4.0
 uwsgi==2.0.17.1
 mozsvc==0.8
 pyramid_mako==1.0.2
