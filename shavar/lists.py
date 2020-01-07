@@ -1,9 +1,9 @@
-import ConfigParser
-import StringIO
+import configparser
+import io
 import logging
 import requests
 from packaging import version
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from shavar.exceptions import MissingListDataError, NoDataError
 from shavar.sources import (
@@ -86,7 +86,7 @@ def includeme(config):
                          "in the config \"%s\"!" % config.filename)
     try:
         lists_to_serve_url = urlparse(lists_to_serve)
-    except TypeError, e:
+    except TypeError as e:
         raise ValueError('lists_served must be dir:// or s3+dir:// value')
     lists_to_serve_scheme = lists_to_serve_url.scheme.lower()
     list_configs = []
@@ -101,14 +101,14 @@ def includeme(config):
             if list_config_file.endswith(".ini"):
                 list_name = list_config_file[:-len(".ini")]
                 try:
-                    list_config = ConfigParser.ConfigParser()
+                    list_config = configparser.ConfigParser()
                     list_config.readfp(open(
                         os.path.join(list_config_dir, list_config_file)
                     ))
                     list_configs.append(
                         {'name': list_name, 'config': list_config}
                     )
-                except ConfigParser.NoSectionError, e:
+                except configparser.NoSectionError as e:
                     logger.error(e)
 
     elif lists_to_serve_scheme == 's3+dir':
@@ -118,7 +118,7 @@ def includeme(config):
         try:
             conn = boto.connect_s3()
             bucket = conn.get_bucket(lists_to_serve_url.netloc)
-        except S3ResponseError, e:
+        except S3ResponseError as e:
             raise NoDataError("Could not find bucket \"%s\": %s" %
                               (lists_to_serve_url.netloc, e))
         for list_key in bucket.get_all_keys():
@@ -126,10 +126,10 @@ def includeme(config):
             list_name = list_key_name.rstrip('.ini')
             list_ini = list_key.get_contents_as_string()
             try:
-                list_config = ConfigParser.ConfigParser()
-                list_config.readfp(StringIO.StringIO(list_ini))
+                list_config = configparser.ConfigParser()
+                list_config.readfp(io.StringIO(list_ini))
                 list_configs.append({'name': list_name, 'config': list_config})
-            except ConfigParser.NoSectionError, e:
+            except configparser.NoSectionError as e:
                 logger.error(e)
 
     else:
@@ -244,7 +244,7 @@ def lookup_prefixes(request, prefixes):
 
     found = {}
 
-    for list_name, sblist in request.registry['shavar.serving'].iteritems():
+    for list_name, sblist in request.registry['shavar.serving'].items():
         for prefix in prefixes:
             list_o_chunks = sblist.find_prefix(prefix)
             if not list_o_chunks:
@@ -292,7 +292,7 @@ class SafeBrowsingList(object):
         self._source = cls(self.source_url, refresh_interval=interval)
         try:
             self._source.load()
-        except NoDataError, e:
+        except NoDataError as e:
             logger.error(e)
 
     def refresh(self):

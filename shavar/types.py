@@ -59,7 +59,7 @@ class ChunkList(object):
 
     def __repr__(self):
         return "%s(add_chunks=%s, sub_chunks=%s)" \
-            % (self.__class__.__name__, self.adds.values(), self.subs.values())
+            % (self.__class__.__name__, list(self.adds.values()), list(self.subs.values()))
 
     def __eq__(self, other):
         if (type(self) != type(other)
@@ -73,7 +73,7 @@ class ChunkList(object):
 
     def find_prefix(self, prefix):
         list_o_chunks = []
-        for number, chunk in self.adds.iteritems():
+        for number, chunk in self.adds.items():
             if chunk.find_prefix(prefix):
                 list_o_chunks.append(chunk)
         return list_o_chunks
@@ -144,7 +144,7 @@ class DownloadsListInfo(object):
                                                          self.limit))
 
     def add_range_claim(self, typ, low, high):
-        for i in xrange(low, high + 1):
+        for i in range(low, high + 1):
             self.add_claim(typ, i)
 
     def __eq__(self, other):

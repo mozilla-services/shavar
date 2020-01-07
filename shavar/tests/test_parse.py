@@ -1,4 +1,4 @@
-import StringIO
+import io
 
 from shavar.exceptions import ParseError
 from shavar.parse import (
@@ -220,13 +220,13 @@ class ParseTest(ShavarTestCase):
                                                              self.hm]),
                       hash_size=32)]
 
-        self.assertEqual(parse_file_source(StringIO.StringIO(add)),
+        self.assertEqual(parse_file_source(io.StringIO(add)),
                          ChunkList(add_chunks=adds))
-        self.assertEqual(parse_file_source(StringIO.StringIO(sub)),
+        self.assertEqual(parse_file_source(io.StringIO(sub)),
                          ChunkList(sub_chunks=subs))
         # Both adds and subs with a spurious newline in between
         both = "%s\n%s" % (add, sub)
-        self.assertEqual(parse_file_source(StringIO.StringIO(both)),
+        self.assertEqual(parse_file_source(io.StringIO(both)),
                          ChunkList(add_chunks=adds, sub_chunks=subs))
 
     def test_parse_file_source_delta(self):

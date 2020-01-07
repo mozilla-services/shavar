@@ -4,7 +4,7 @@ import os
 import posixpath
 import tempfile
 import time
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from boto.exception import S3ResponseError
 from boto.s3.connection import S3Connection
@@ -41,7 +41,7 @@ class Source(object):
             self.last_refresh = int(time.time())
             self.chunk_index = {'adds': set(self.chunks.adds.keys()),
                                 'subs': set(self.chunks.subs.keys())}
-        except ParseError, e:
+        except ParseError as e:
             raise ParseError('Error parsing "%s": %s' % (self.url.path, e))
 
     def refresh(self):
@@ -149,7 +149,7 @@ class S3FileSource(Source):
         try:
             conn = S3Connection()
             bucket = conn.get_bucket(self.url.netloc)
-        except S3ResponseError, e:
+        except S3ResponseError as e:
             raise NoDataError("Could not find bucket \"%s\": %s"
                               % (self.url.netloc, e))
         return bucket.get_key(self.key_name)
@@ -192,7 +192,7 @@ class S3DirectorySource(S3FileSource):
 
         try:
             bucket = conn.get_bucket(self.url.netloc)
-        except S3ResponseError, e:
+        except S3ResponseError as e:
             if e.status == 404:
                 raise NoDataError("No such bucket \"{0}\""
                                   .format(self.url.netloc))
@@ -223,7 +223,7 @@ class S3DirectorySource(S3FileSource):
                 self._populate_chunks(fp, parse_dir_source,
                                       exists_cb=s3exists,
                                       open_cb=s3open)
-            except ParseError, e:
+            except ParseError as e:
                 raise NoDataError("Parsing failure: {0}".format(str(e)))
 
             self.current_etag = s3key.etag
