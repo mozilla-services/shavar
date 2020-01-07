@@ -99,7 +99,7 @@ def downloads_view(request):
 
     try:
         parsed = parse_downloads(request)
-    except ParseError, e:
+    except ParseError as e:
         logger.error(e)
         raise HTTPBadRequest(e)
 
@@ -160,7 +160,7 @@ def format_downloads(request, resp_payload):
     """
     body = "n:{0}\n".format(resp_payload['interval'])
 
-    for lname, ldict in resp_payload['lists'].iteritems():
+    for lname, ldict in resp_payload['lists'].items():
         ldata = ldict['ldata']
         sblist = ldict['sblist']
         list_ver = ldict['list_ver']
@@ -211,7 +211,7 @@ def format_downloads(request, resp_payload):
 def gethash_view(request):
     try:
         parsed = parse_gethash(request)
-    except ParseError, e:
+    except ParseError as e:
         annotate_request(request, "shavar.gethash.unknown.format", 1)
         raise HTTPBadRequest(str(e))
 
@@ -224,7 +224,7 @@ def gethash_view(request):
     # FIXME MAC handling
     body = ''
     for lname, chunk_data in full.items():
-        for chunk_num, hashes in chunk_data.iteritems():
+        for chunk_num, hashes in chunk_data.items():
             h = ''.join(hashes)
             body += '{list_name}:{chunk_number}:{data_len}\n{data}' \
                 .format(list_name=lname, chunk_number=chunk_num,

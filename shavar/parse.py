@@ -243,7 +243,7 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
     """
     try:
         index = json.load(handle)
-    except ValueError, e:
+    except ValueError as e:
         raise ParseError("Could not parse index file: %s" % e)
 
     if 'name' not in index:
@@ -259,7 +259,7 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
         basedir = os.path.dirname(handle.name)
 
     parsed = ChunkList()
-    for key in index['chunks'].iterkeys():
+    for key in index['chunks'].keys():
         # A little massaging to make the data structure a little cleaner
         try:
             index['chunks'][int(key)] = index['chunks'][key]
@@ -281,8 +281,8 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
             raise ParseError("More than one chunk in chunk file \"%s\""
                              % chunk_file)
 
-        for chunk in itertools.chain(chunk_list.adds.itervalues(),
-                                     chunk_list.subs.itervalues()):
+        for chunk in itertools.chain(iter(chunk_list.adds.values()),
+                                     iter(chunk_list.subs.values())):
             parsed.insert_chunk(chunk)
 
     return parsed
