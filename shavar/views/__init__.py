@@ -77,7 +77,7 @@ def list_view(request):
     lists = sorted(request.registry['shavar.serving'].keys())
 
     body = '\n'.join(lists) + '\n'
-    return HTTPOk(content_type='text/plain', body=body)
+    return HTTPOk(content_type='text/plain', text=body)
 
 
 def downloads_view(request):
@@ -151,7 +151,7 @@ def downloads_view(request):
             resp_payload['lists'][list_info.name]['adddels'] = list_info.adds
 
     return HTTPOk(content_type="application/octet-stream",
-                  body=format_downloads(request, resp_payload))
+                  text=format_downloads(request, resp_payload))
 
 
 def format_downloads(request, resp_payload):
@@ -230,7 +230,7 @@ def gethash_view(request):
                 .format(list_name=lname, chunk_number=chunk_num,
                         data_len=len(h), data=h)
 
-    return HTTPOk(content_type="application/octet-stream", body=body)
+    return HTTPOk(content_type="application/octet-stream", text=body)
 
 
 def newkey_view(request):
@@ -241,4 +241,4 @@ def newkey_view(request):
 
 def not_found(request):
     return HTTPNotFound(content_type="application/octet-stream",
-                        body="The requested page was not found.")
+                        text="The requested page was not found.")
