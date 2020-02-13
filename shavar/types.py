@@ -59,7 +59,9 @@ class ChunkList(object):
 
     def __repr__(self):
         return "%s(add_chunks=%s, sub_chunks=%s)" \
-            % (self.__class__.__name__, list(self.adds.values()), list(self.subs.values()))
+            % (self.__class__.__name__,
+               list(self.adds.values()),
+               list(self.subs.values()))
 
     def __eq__(self, other):
         if (type(self) != type(other)
