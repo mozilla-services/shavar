@@ -269,16 +269,15 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
         basedir = os.path.dirname(handle.name)
 
     parsed = ChunkList()
+    int_key_chunks = {}
     for key in index['chunks'].keys():
         # A little massaging to make the data structure a little cleaner
         try:
-            index['chunks'][int(key)] = index['chunks'][key]
-            del index['chunks'][key]
+            int_key_chunks[int(key)] = index['chunks'][key]
         except KeyError:
             raise ParseError("Some weird behaviour with the list of chunks "
                              "in \"%s\"" % handle.filename)
-
-        chunk_file = posixpath.join(basedir, key)
+        chunk_file = posixpath.join(basedir, str(key))
 
         if not exists_cb(chunk_file):
             raise ParseError("Invalid chunk filename: \"%s\"" % chunk_file)
@@ -294,5 +293,5 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
         for chunk in itertools.chain(iter(chunk_list.adds.values()),
                                      iter(chunk_list.subs.values())):
             parsed.insert_chunk(chunk)
-
+    index['chunks'] = int_key_chunks
     return parsed
