@@ -19,6 +19,7 @@ def parse_downloads(request):
         if not line or line.isspace():
             continue
 
+        line = line.decode('utf-8')
         # Did client provide max size preference?
         if line.startswith("s;"):
             if lineno != 0:
