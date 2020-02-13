@@ -67,7 +67,8 @@ def dummy(body, path="/downloads", **kwargs):
               "pver":   "2.0"}
     if kwargs:
         params.update(kwargs)
-    return DummyRequest(params=params, body=body)
+    body_in_bytes = body.encode() if isinstance(body, str) else body
+    return DummyRequest(params=params, body=body_in_bytes)
 
 
 def test_file(fname):
