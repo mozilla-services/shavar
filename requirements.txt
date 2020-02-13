@@ -9,14 +9,15 @@ pyramid_chameleon==0.3
 pyramid_debugtoolbar==2.1
 requests==2.22.0
 raven==5.12.0
+simplejson
 statsd==3.0
 waitress==1.4.3
 uwsgi==2.0.17.1
-mozsvc==0.8
+# mozsvc==0.8
 pyramid_mako==1.0.2
 swagger-parser==0.1.11
 #
 # mozsvc has some wonky issues with testing dependencies
 #
-WSGIProxy
+WSGIProxy2
 webtest
