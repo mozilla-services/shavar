@@ -3,7 +3,7 @@ import posixpath
 
 import boto
 from boto.s3.key import Key
-from moto import mock_s3
+from moto import mock_s3_deprecated as mock_s3
 
 from shavar.exceptions import MissingListDataError
 from shavar.lists import (
