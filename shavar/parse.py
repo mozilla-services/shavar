@@ -135,6 +135,15 @@ def parse_gethash(request):
     return set(parsed)  # unique-ify
 
 
+def get_header(blob, eol):
+    try:
+        header = blob[:eol].decode()
+    except UnicodeDecodeError:
+        raise ParseError('Invalid unicode string found in chunk header: '
+                         '"%s"' % blob[:eol])
+    return header
+
+
 def parse_file_source(handle):
     """
     Parses a chunk list formatted file
@@ -162,7 +171,7 @@ def parse_file_source(handle):
         blob = handle.read(32)
 
         # Consume any unnecessary newlines in front of chunks
-        blob = blob.lstrip('\n')
+        blob = blob.lstrip(b'\n')
 
         if not blob:
             break
@@ -171,10 +180,10 @@ def parse_file_source(handle):
             raise ParseError("Incomplete chunk file? Could only read %d "
                              "bytes of header." % len(blob))
 
-        eol = blob.find('\n')
+        eol = blob.find(b'\n')
         if eol < 8:
             raise ParseError('Impossibly short chunk header: "%s"' % eol)
-        header = blob[:eol]
+        header = get_header(blob, eol)
 
         if header.count(':') != 3:
             raise ParseError('Incorrect number of fields in chunk header: '
