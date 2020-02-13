@@ -19,7 +19,7 @@ def parse_downloads(request):
         if not line or line.isspace():
             continue
 
-        line = line.decode('utf-8')
+        line = line.decode()
         # Did client provide max size preference?
         if line.startswith("s;"):
             if lineno != 0:
@@ -113,7 +113,7 @@ def parse_gethash(request):
             or (payload_len < prefix_len)):
         raise ParseError("Payload length invalid: \"%d\"" % payload_len)
 
-    prefix_total = payload_len / prefix_len
+    prefix_total = payload_len // prefix_len
     prefixes_read = 0
     total_read = 0
     while prefixes_read < prefix_total:
