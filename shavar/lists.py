@@ -86,7 +86,7 @@ def includeme(config):
                          "in the config \"%s\"!" % config.filename)
     try:
         lists_to_serve_url = urlparse(lists_to_serve)
-    except TypeError as e:
+    except TypeError:
         raise ValueError('lists_served must be dir:// or s3+dir:// value')
     lists_to_serve_scheme = lists_to_serve_url.scheme.lower()
     list_configs = []
