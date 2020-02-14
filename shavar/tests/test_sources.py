@@ -26,7 +26,7 @@ class FileSourceTest(ShavarTestCase):
 
     def setUp(self):
         source = tempfile.NamedTemporaryFile(delete=False)
-        source.write("%s\n%s" % (self.add, self.sub))
+        source.write(self.add + b'\n' + self.sub)
         source.flush()
         source.seek(0)
         self.source = source
@@ -48,7 +48,7 @@ class FileSourceTest(ShavarTestCase):
         f.load()
         self.assertFalse(f.refresh())
         self.source.seek(0)
-        self.source.write("%s\n%s" % (self.add, self.sub))
+        self.source.write(self.add + b'\n' + self.sub)
         self.source.flush()
         self.source.seek(0)
         times = os.stat(self.source.name)
@@ -105,7 +105,7 @@ class TestS3FileSource(ShavarTestCase):
             b = conn.create_bucket(self.bucket_name)
             k = Key(b)
             k.name = self.key_name
-            k.set_contents_from_string("%s\n%s" % (self.add, self.sub))
+            k.set_contents_from_string(self.add + b'\n' + self.sub)
 
             f = S3FileSource("s3+file://{0}/{1}".format(self.bucket_name,
                                                         self.key_name),
@@ -120,7 +120,7 @@ class TestS3FileSource(ShavarTestCase):
             b = conn.create_bucket(self.bucket_name)
             k = Key(b)
             k.name = self.key_name
-            k.set_contents_from_string("%s\n%s" % (self.add, self.sub))
+            k.set_contents_from_string(self.add + b'\n' + self.sub)
 
             f = S3FileSource("s3+file://{0}/{1}".format(self.bucket_name,
                                                         self.key_name),
