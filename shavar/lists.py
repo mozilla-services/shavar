@@ -124,7 +124,7 @@ def includeme(config):
         for list_key in bucket.get_all_keys():
             list_key_name = list_key.key
             list_name = list_key_name.rstrip('.ini')
-            list_ini = list_key.get_contents_as_string()
+            list_ini = list_key.get_contents_as_string(encoding='UTF-8')
             try:
                 list_config = configparser.ConfigParser()
                 list_config.readfp(io.StringIO(list_ini))
