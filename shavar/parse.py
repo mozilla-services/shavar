@@ -266,7 +266,10 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
         basedir = posixpath.join(os.path.dirname(handle.name),
                                  index['basedir'])
     else:
-        basedir = os.path.dirname(handle.name)
+        handle_name = handle.name
+        if isinstance(handle_name, int):
+            handle_name = str(handle_name)
+        basedir = os.path.dirname(handle_name)
 
     parsed = ChunkList()
     int_key_chunks = {}
