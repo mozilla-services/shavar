@@ -1,5 +1,6 @@
 import os
 import posixpath
+import responses
 
 import boto
 from boto.s3.key import Key
@@ -158,11 +159,35 @@ class S3SourceListsTest(ShavarTestCase):
                       'rb') as f:
                 k.set_contents_from_file(f)
 
+        responses.start()
+        GITHUB_API_URL = 'https://api.github.com'
+        SHAVAR_PROD_LISTS_BRANCHES_PATH = (
+            '/repos/mozilla-services/shavar-prod-lists/branches'
+        )
+        auth_header = {
+            'Authorization': 'token 66ad654d4818c768a8093679a2c5fac9c4e224a1'
+        }
+        resp_body = """
+            [{
+              "name": "69.0",
+              "commit": {
+                "sha": "35665559e9e4a85c12bb8211b5f9217fbb96062d",
+                "url": "https://api.github.com/repos/mozilla-services/\
+                    shavar-prod-lists/commits/\
+                    35665559e9e4a85c12bb8211b5f9217fbb96062d"
+              }
+            }]
+        """
+        responses.add(
+            responses.GET, GITHUB_API_URL + SHAVAR_PROD_LISTS_BRANCHES_PATH,
+            body=resp_body
+        )
         # initialize the internal list data structure via the normal method
         super(S3SourceListsTest, self).setUp()
 
     def tearDown(self):
         self.mock.stop()
+        responses.stop()
         super(S3SourceListsTest, self).tearDown()
 
     def test_3_s3_sources_in_list_instantiation(self):
