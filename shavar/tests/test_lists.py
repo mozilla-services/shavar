@@ -164,9 +164,6 @@ class S3SourceListsTest(ShavarTestCase):
         SHAVAR_PROD_LISTS_BRANCHES_PATH = (
             '/repos/mozilla-services/shavar-prod-lists/branches'
         )
-        auth_header = {
-            'Authorization': 'token 66ad654d4818c768a8093679a2c5fac9c4e224a1'
-        }
         resp_body = """
             [{
               "name": "69.0",
