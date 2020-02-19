@@ -144,7 +144,7 @@ class VersionViewTest(ShavarTestCase):
         request = dummy('', path="/__version__")
         response = version_view(request)
         # compare against version.json in the top level dir
-        with open('version.json', 'r') as f:
+        with open('version.json', 'rb') as f:
             self.assertEqual(response.body, f.read())
 
 
