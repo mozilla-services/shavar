@@ -151,15 +151,14 @@ def downloads_view(request):
             resp_payload['lists'][list_info.name]['adddels'] = list_info.adds
 
     return HTTPOk(content_type="application/octet-stream",
-                  text=format_downloads(request, resp_payload))
+                  body=format_downloads(request, resp_payload))
 
 
 def format_downloads(request, resp_payload):
     """
     Formats the response body according to protocol version
     """
-    body = "n:{0}\n".format(resp_payload['interval'])
-
+    body = "n:{0}\n".format(resp_payload['interval']).encode()
     for lname, ldict in resp_payload['lists'].items():
         ldata = ldict['ldata']
         sblist = ldict['sblist']
@@ -170,25 +169,26 @@ def format_downloads(request, resp_payload):
             "sending_data_inline_is_a_bad_idea_but_do_it_for_this_list",
             False
         )
-        body += "i:%s\n" % lname
+        body += ("i:%s\n" % lname).encode()
 
         # Chunk deletion commands come first
         if 'adddels' in ldict and ldict['adddels']:
             dels = ','.join(['{0}'.format(num) for num in ldict['adddels']])
-            body += 'ad:{0}\n'.format(dels)
+            body += ('ad:{0}\n'.format(dels)).encode()
         if 'subdels' in ldict and ldict['subdels']:
             dels = ','.join(['{0}'.format(num) for num in ldict['subdels']])
-            body += 'sd:{0}\n'.format(dels)
-
+            body += ('sd:{0}\n'.format(dels)).encode()
+        # import ipdb; ipdb.set_trace()
         # TODO  Should we prioritize subs over adds?
         for chunk in chain(ldata['adds'], ldata['subs']):
             if be_broken:
-                d = ''.join(chunk.hashes)
-                data = "{type}:{chunk_num}:{hash_len}:{payload_len}\n" \
-                       "{payload}".format(type=chunk.type,
-                                          chunk_num=chunk.number,
-                                          hash_len=chunk.hash_len,
-                                          payload_len=len(d), payload=d)
+                d = b''.join(chunk.hashes)
+                data = "{type}:{chunk_num}:{hash_len}:{payload_len}\n".format(
+                    type=chunk.type,
+                    chunk_num=chunk.number,
+                    hash_len=chunk.hash_len,
+                    payload_len=len(d))
+                data = data.encode() + d
             else:
                 # Grab the default from the app
                 baseurl = sblist.settings.get('redirect_url_base')
@@ -200,7 +200,7 @@ def format_downloads(request, resp_payload):
                         baseurl, lname, list_ver, "%d" % chunk.number)
                 else:
                     fudge = os.path.join(baseurl, lname, "%d" % chunk.number)
-                data = 'u:{0}\n'.format(fudge)
+                data = ('u:{0}\n'.format(fudge)).encode()
             body += data
     return body
 
@@ -222,15 +222,16 @@ def gethash_view(request):
         return HTTPNoContent()
 
     # FIXME MAC handling
-    body = ''
+    body = b''
     for lname, chunk_data in full.items():
         for chunk_num, hashes in chunk_data.items():
-            h = ''.join(hashes)
-            body += '{list_name}:{chunk_number}:{data_len}\n{data}' \
+            h = b''.join(hashes)
+            body += '{list_name}:{chunk_number}:{data_len}\n' \
                 .format(list_name=lname, chunk_number=chunk_num,
-                        data_len=len(h), data=h)
+                        data_len=len(h)).encode()
+            body += h
 
-    return HTTPOk(content_type="application/octet-stream", text=body)
+    return HTTPOk(content_type="application/octet-stream", body=body)
 
 
 def newkey_view(request):
