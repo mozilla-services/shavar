@@ -224,7 +224,7 @@ def gethash_view(request):
     # FIXME MAC handling
     body = b''
     for lname, chunk_data in full.items():
-        for chunk_num, hashes in chunk_data.items():
+        for chunk_num, hashes in sorted(chunk_data.items()):
             h = b''.join(hashes)
             body += '{list_name}:{chunk_number}:{data_len}\n' \
                 .format(list_name=lname, chunk_number=chunk_num,
