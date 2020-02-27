@@ -178,7 +178,6 @@ def format_downloads(request, resp_payload):
         if 'subdels' in ldict and ldict['subdels']:
             dels = ','.join(['{0}'.format(num) for num in ldict['subdels']])
             body += ('sd:{0}\n'.format(dels)).encode()
-        # import ipdb; ipdb.set_trace()
         # TODO  Should we prioritize subs over adds?
         for chunk in chain(ldata['adds'], ldata['subs']):
             if be_broken:
