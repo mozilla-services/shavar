@@ -41,7 +41,8 @@ Configuration
 The shavar service serves changes to a set of hashes of canonicalized URLs.
 Basic configuration consists of specifying the names of the lists to be served
 and a section for each of those lists declaring at least the two minimum
-required configuration directives for each list.
+required configuration directives for each list. Read shavar-server-list-config
+for more examples of Shavar configurations.
 
 A commented example configuration::
 
