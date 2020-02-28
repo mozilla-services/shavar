@@ -35,7 +35,7 @@ def parse_downloads(request):
             continue
 
         if ";" not in line:
-            return ParseError("Bad downloads request: no semi-colon")
+            raise ParseError("Bad downloads request: no semi-colon")
 
         lname, chunklist = line.split(";", 1)
         if not lname or '-' not in lname:

@@ -137,6 +137,9 @@ class ParseTest(ShavarTestCase):
         self.assertRaises(LimitExceededError, parse_downloads,
                           dummy("mozpub-track-digest256;a:1-1002"))
 
+        self.assertRaises(ParseError, parse_downloads,
+                          dummy("mozpub-track-digest256"))
+
     def test_parse_gethash(self):
         h = b"4:32\n"
         d = (b"\xdd\x01J\xf5",
