@@ -4,6 +4,8 @@ boto==2.49.0 \
     --hash=sha256:147758d41ae7240dc989f0039f27da8ca0d53734be0eb869ef16e3adcfa462e8
 configparser==4.0.2 \
     --hash=sha256:254c1d9c79f60c45dfde850850883d5aaa7f19a23f13561243a050d5a7c3fe4c
+hupper==1.10.2 \
+    --hash=sha256:5de835f3b58324af2a8a16f52270c4d1a3d1734c45eed94b77fd622aea737f29
 konfig==1.1 \
     --hash=sha256:7aa4c6463d6c13f4c98c02a998cbef4729da9ad69b676627acc8d3b3efb02b57
 packaging==20.1 \
@@ -16,6 +18,10 @@ PasteDeploy==2.1.0 \
 PasteScript==3.2.0 \
     --hash=sha256:9b0f5c0f1c6a510a353fa7c3dc4fdaab9071462d60d24573de76a001fbc172ac \
     --hash=sha256:a08970fdcd5fcd92d79c51fe356d7866f13d30e847bd2eed0351f9644236b3b8
+plaster==1.0 \
+    --hash=sha256:215c921a438b5349931fd7df9a5a11a3572947f20f4bc6dd622ac08f1c3ba249
+plaster-pastedeploy==0.7 \
+    --hash=sha256:7c8aa37c917b615c70bf942b24dc1e0455c49f62f1a2214b1a0dd98871644bbb
 pyparsing==2.4.6 \
     --hash=sha256:c342dccb5250c08d45fd6f8b4a559613ca603b57498511740e65cd11a2e7dcec
 pyramid==1.10.4 \
@@ -39,6 +45,10 @@ simplejson==3.17.0 \
 statsd==3.3.0 \
     --hash=sha256:c610fb80347fca0ef62666d241bce64184bd7cc1efe582f9690e045c25535eaa \
     --hash=sha256:e3e6db4c246f7c59003e51c9720a51a7f39a396541cb9b147ff4b14d15b5dd1f
+translationstring==1.3
+    --hash=sha256:e26c7bf383413234ed442e0980a2ebe192b95e3745288a8fd2805156d27515b4
+venusian==3.0.0 \
+    --hash=sha256:06e7385786ad3a15c70740b2af8d30dfb063a946a851dcb4159f9e2a2302578f
 waitress==1.4.3 \
     --hash=sha256:77ff3f3226931a1d7d8624c5371de07c8e90c7e5d80c5cc660d72659aaf23f38
 uWSGI==2.0.18 \
@@ -51,5 +61,11 @@ swagger-parser==1.0.1 \
     --hash=sha256:8c0263e3128d3af9150c6fcd83d768967211f3bcb4da330fbe318fb44e38bdd2
 WSGIProxy2==0.4.6 \
     --hash=sha256:6d94ff1b1142a5544571912a6745bdb654a854d1ee96a48f0656b1cb254ccb9f
+webob==1.8.6 \
+    --hash=sha256:a3c89a8e9ba0aeb17382836cdb73c516d0ecf6630ec40ec28288f3ed459ce87b
 webtest==2.0.34 \
     --hash=sha256:da9cf14c103ff51a40dee4cac7657840d1317456eb8f0ca81289b5cbff175f4b
+zope.interface==4.7.1 \
+    --hash=sha256:25e0ef4a824017809d6d8b0ce4ab3288594ba283e4d4f94d8cfb81d73ed65114
+zope.deprecation==4.4.0 \
+    --hash=sha256:f1480b74995958b24ce37b0ef04d3663d2683e5d6debc96726eff18acf4ea113
