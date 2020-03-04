@@ -1,5 +1,7 @@
 argparse==1.4.0 \
     --hash=sha256:c31647edb69fd3d465a847ea3157d37bed1f95f19760b11a47aa91c04b666314
+beautifulsoup4==4.8.2 \
+    --hash=sha256:9fbb4d6e48ecd30bcacc5b63b94088192dcda178513b2ae3c394229f8911b887
 boto==2.49.0 \
     --hash=sha256:147758d41ae7240dc989f0039f27da8ca0d53734be0eb869ef16e3adcfa462e8
 certifi==2019.11.28 \
