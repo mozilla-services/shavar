@@ -73,7 +73,7 @@ swagger-parser==1.0.1 \
     --hash=sha256:8c0263e3128d3af9150c6fcd83d768967211f3bcb4da330fbe318fb44e38bdd2
 swagger-spec-validator==2.5.0 \
     --hash=sha256:8eb82682871f8d63067b455e2e055c8dd953ca260e791635b58dfe0b73ba1f43
-translationstring==1.3
+translationstring==1.3 \
     --hash=sha256:e26c7bf383413234ed442e0980a2ebe192b95e3745288a8fd2805156d27515b4
 urllib3==1.25.8 \
     --hash=sha256:2f3db8b19923a873b3e5256dc9c2dedfa883e33d87c690d9c7913e1f40673cdc
