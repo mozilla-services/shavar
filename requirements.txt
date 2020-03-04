@@ -14,6 +14,8 @@ hupper==1.10.2 \
     --hash=sha256:5de835f3b58324af2a8a16f52270c4d1a3d1734c45eed94b77fd622aea737f29
 idna==2.9 \
     --hash=sha256:a068a21ceac8a4d63dbfd964670474107f541babbd2250d61922f029858365fa
+jinja2==2.11.1 \
+    --hash=sha256:b0eaf100007721b5c16c1fc1eecb87409464edc10469ddc9a22a27a99123be49
 konfig==1.1 \
     --hash=sha256:7aa4c6463d6c13f4c98c02a998cbef4729da9ad69b676627acc8d3b3efb02b57
 Mako==1.1.2 \
@@ -47,6 +49,8 @@ pyramid-debugtoolbar==4.6.1 \
 pyramid-mako==1.1.0 \
     --hash=sha256:0066c863441f1c3ddea60cee1ccc50d00a91a317a8052ca44131da1a12a840e2 \
     --hash=sha256:76104592d292b6974cf7080aa52405c51f396a621535f01e274d7fe546e85a43
+PyYAML==5.3 \
+    --hash=sha256:e9f45bd5b92c7974e59bcd2dcc8631a6b6cc380a904725fce7bc08872e691615
 repoze.lru==0.7 \
     --hash=sha256:f77bf0e1096ea445beadd35f3479c5cff2aa1efe604a133e67150bc8630a62ea
 requests==2.23.0 \
@@ -65,6 +69,8 @@ statsd==3.3.0 \
 swagger-parser==1.0.1 \
     --hash=sha256:0802ea49468fab102ed8cb8a6cc6c41423ad60fd396c14a2f187c7d5165f2e18 \
     --hash=sha256:8c0263e3128d3af9150c6fcd83d768967211f3bcb4da330fbe318fb44e38bdd2
+swagger-spec-validator==2.5.0 \
+    --hash=sha256:8eb82682871f8d63067b455e2e055c8dd953ca260e791635b58dfe0b73ba1f43
 translationstring==1.3
     --hash=sha256:e26c7bf383413234ed442e0980a2ebe192b95e3745288a8fd2805156d27515b4
 urllib3==1.25.8 \
