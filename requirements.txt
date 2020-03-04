@@ -4,6 +4,8 @@ boto==2.49.0 \
     --hash=sha256:147758d41ae7240dc989f0039f27da8ca0d53734be0eb869ef16e3adcfa462e8
 configparser==4.0.2 \
     --hash=sha256:254c1d9c79f60c45dfde850850883d5aaa7f19a23f13561243a050d5a7c3fe4c
+Chameleon==3.6.2 \
+    --hash=sha256:9a9e5e068ee323817705a793cc03538677915c3b99c3f8a4ecba42e62d66862b
 hupper==1.10.2 \
     --hash=sha256:5de835f3b58324af2a8a16f52270c4d1a3d1734c45eed94b77fd622aea737f29
 konfig==1.1 \
