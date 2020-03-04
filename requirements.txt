@@ -18,6 +18,8 @@ idna==2.9 \
     --hash=sha256:a068a21ceac8a4d63dbfd964670474107f541babbd2250d61922f029858365fa
 jinja2==2.11.1 \
     --hash=sha256:b0eaf100007721b5c16c1fc1eecb87409464edc10469ddc9a22a27a99123be49
+jsonschema==3.2.0 \
+    --hash=sha256:4e5b3cf8216f577bee9ce139cbe72eca3ea4f292ec60928ff24758ce626cd163
 konfig==1.1 \
     --hash=sha256:7aa4c6463d6c13f4c98c02a998cbef4729da9ad69b676627acc8d3b3efb02b57
 Mako==1.1.2 \
