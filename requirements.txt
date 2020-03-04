@@ -101,6 +101,8 @@ webob==1.8.6 \
     --hash=sha256:a3c89a8e9ba0aeb17382836cdb73c516d0ecf6630ec40ec28288f3ed459ce87b
 webtest==2.0.34 \
     --hash=sha256:da9cf14c103ff51a40dee4cac7657840d1317456eb8f0ca81289b5cbff175f4b
+zipp==3.1.0 \
+    --hash=sha256:aa36550ff0c0b7ef7fa639055d797116ee891440eac1a56f378e2d3179e0320b
 zope.interface==4.7.1 \
     --hash=sha256:25e0ef4a824017809d6d8b0ce4ab3288594ba283e4d4f94d8cfb81d73ed65114
 zope.deprecation==4.4.0 \
