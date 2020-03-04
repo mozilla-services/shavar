@@ -1,5 +1,9 @@
+argparse==1.4.0 \
+    --hash=sha256:c31647edb69fd3d465a847ea3157d37bed1f95f19760b11a47aa91c04b666314
 boto==2.49.0 \
     --hash=sha256:147758d41ae7240dc989f0039f27da8ca0d53734be0eb869ef16e3adcfa462e8
+configparser==4.0.2 \
+    --hash=sha256:254c1d9c79f60c45dfde850850883d5aaa7f19a23f13561243a050d5a7c3fe4c
 konfig==1.1 \
     --hash=sha256:7aa4c6463d6c13f4c98c02a998cbef4729da9ad69b676627acc8d3b3efb02b57
 Paste==3.4.0 \
@@ -24,6 +28,8 @@ requests==2.23.0 \
 raven==6.10.0 \
     --hash=sha256:3fa6de6efa2493a7c827472e984ce9b020797d0da16f1db67197bcc23c8fae54 \
     --hash=sha256:44a13f87670836e153951af9a3c80405d36b43097db869a36e92809673692ce4
+six==1.14.0 \
+    --hash=sha256:8f3cd2e254d8f793e7f3d6d9df77b92252b52637291d0f0da013c76ea2724b6c
 simplejson==3.17.0 \
     --hash=sha256:9a126c3a91df5b1403e965ba63b304a50b53d8efc908a8c71545ed72535374a3
 statsd==3.3.0 \
