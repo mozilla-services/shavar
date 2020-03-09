@@ -1,5 +1,7 @@
 -c constraints.txt
 
+boto==2.49.0 \
+    --hash=sha256:147758d41ae7240dc989f0039f27da8ca0d53734be0eb869ef16e3adcfa462e8
 konfig==1.1 \
     --hash=sha256:7aa4c6463d6c13f4c98c02a998cbef4729da9ad69b676627acc8d3b3efb02b57
 packaging==20.1 \
@@ -26,7 +28,5 @@ swagger-parser==1.0.1 \
     --hash=sha256:8c0263e3128d3af9150c6fcd83d768967211f3bcb4da330fbe318fb44e38bdd2
 uWSGI==2.0.18 \
     --hash=sha256:4972ac538800fb2d421027f49b4a1869b66048839507ccf0aa2fda792d99f583
-webtest==2.0.34 \
-    --hash=sha256:da9cf14c103ff51a40dee4cac7657840d1317456eb8f0ca81289b5cbff175f4b
 WSGIProxy2==0.4.6 \
     --hash=sha256:6d94ff1b1142a5544571912a6745bdb654a854d1ee96a48f0656b1cb254ccb9f
