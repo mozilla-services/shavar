@@ -1,9 +1,10 @@
 import os
 import posixpath
+import responses
 
 import boto
 from boto.s3.key import Key
-from moto import mock_s3
+from moto import mock_s3_deprecated as mock_s3
 
 from shavar.exceptions import MissingListDataError
 from shavar.lists import (
@@ -37,7 +38,7 @@ class ListsTest(ShavarTestCase):
     def test_3_match_with_versioned_list_version_not_specified(self):
         list_name, list_ver = match_with_versioned_list(
             'none', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(
+        self.assertEqual(
             (list_name, list_ver),
             ('mozpub-track-digest256', None)
         )
@@ -45,7 +46,7 @@ class ListsTest(ShavarTestCase):
     def test_4_match_with_versioned_list_version_lower_than_supported(self):
         list_name, list_ver = match_with_versioned_list(
             '68.0', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(
+        self.assertEqual(
             (list_name, list_ver),
             ('69.0-mozpub-track-digest256', '69.0')
         )
@@ -53,7 +54,7 @@ class ListsTest(ShavarTestCase):
     def test_5_match_with_versioned_list_version_exact_match(self):
         list_name, list_ver = match_with_versioned_list(
             '70.0', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(
+        self.assertEqual(
             (list_name, list_ver),
             ('70.0-mozpub-track-digest256', '70.0')
         )
@@ -61,7 +62,7 @@ class ListsTest(ShavarTestCase):
     def test_6_match_with_versioned_list_version_fuzzy_match(self):
         list_name, list_ver = match_with_versioned_list(
             '71.0a1', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(
+        self.assertEqual(
             (list_name, list_ver),
             ('71.0-mozpub-track-digest256', '71.0')
         )
@@ -69,14 +70,14 @@ class ListsTest(ShavarTestCase):
     def test_7_match_with_versioned_list_version_fuzzy_match(self):
         list_name, list_ver = match_with_versioned_list(
             '72.0a1', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(
+        self.assertEqual(
             (list_name, list_ver),
             ('mozpub-track-digest256', None)
         )
 
     def test_8_get_versioned_list_name(self):
         list_name = get_versioned_list_name('70.0', 'mozpub-track-digest256')
-        self.assertEquals(list_name, '70.0-mozpub-track-digest256')
+        self.assertEqual(list_name, '70.0-mozpub-track-digest256')
 
     def test_9_get_list_version_not_specified(self):
         dumdum = dummy(body='4:4\n%s' % self.hg[:4], path='/gethash')
@@ -86,7 +87,7 @@ class ListsTest(ShavarTestCase):
     def test_10_match_with_versioned_list_major_version(self):
         list_name, list_ver = match_with_versioned_list(
             '71.1', ['70.0', '71.0'], 'mozpub-track-digest256')
-        self.assertEquals(
+        self.assertEqual(
             (list_name, list_ver),
             ('71.0-mozpub-track-digest256', '71.0')
         )
@@ -158,11 +159,32 @@ class S3SourceListsTest(ShavarTestCase):
                       'rb') as f:
                 k.set_contents_from_file(f)
 
+        responses.start()
+        GITHUB_API_URL = 'https://api.github.com'
+        SHAVAR_PROD_LISTS_BRANCHES_PATH = (
+            '/repos/mozilla-services/shavar-prod-lists/branches'
+        )
+        resp_body = """
+            [{
+              "name": "69.0",
+              "commit": {
+                "sha": "35665559e9e4a85c12bb8211b5f9217fbb96062d",
+                "url": "https://api.github.com/repos/mozilla-services/\
+                    shavar-prod-lists/commits/\
+                    35665559e9e4a85c12bb8211b5f9217fbb96062d"
+              }
+            }]
+        """
+        responses.add(
+            responses.GET, GITHUB_API_URL + SHAVAR_PROD_LISTS_BRANCHES_PATH,
+            body=resp_body
+        )
         # initialize the internal list data structure via the normal method
         super(S3SourceListsTest, self).setUp()
 
     def tearDown(self):
         self.mock.stop()
+        responses.stop()
         super(S3SourceListsTest, self).tearDown()
 
     def test_3_s3_sources_in_list_instantiation(self):

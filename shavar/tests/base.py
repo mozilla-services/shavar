@@ -9,10 +9,10 @@ from mozsvc.tests.support import TestCase
 from shavar.types import Chunk, ChunkList
 
 
-hashes = {'moz': hashlib.sha256('https://www.mozilla.org/').digest(),
-          'goog': hashlib.sha256('https://www.google.com/').digest(),
-          'hub': hashlib.sha256('https://github.com/').digest(),
-          'py': hashlib.sha256('http://www.python.org/').digest()}
+hashes = {'moz': hashlib.sha256('https://www.mozilla.org/'.encode()).digest(),
+          'goog': hashlib.sha256('https://www.google.com/'.encode()).digest(),
+          'hub': hashlib.sha256('https://github.com/'.encode()).digest(),
+          'py': hashlib.sha256('http://www.python.org/'.encode()).digest()}
 
 simple_adds = [Chunk(chunk_type='a', number=17, hashes=set([hashes['goog'],
                                                             hashes['moz']]),
@@ -67,7 +67,8 @@ def dummy(body, path="/downloads", **kwargs):
               "pver":   "2.0"}
     if kwargs:
         params.update(kwargs)
-    return DummyRequest(params=params, body=body)
+    body_in_bytes = body.encode() if isinstance(body, str) else body
+    return DummyRequest(params=params, body=body_in_bytes)
 
 
 def test_file(fname):
@@ -82,9 +83,9 @@ class ShavarTestCase(TestCase):
 
     hm = hashes['moz']
     hg = hashes['goog']
-    _d = ''.join([hm, hg])
-    add = "a:17:32:%d\n%s" % (len(_d), _d)
-    sub = "s:18:32:%d\n%s" % (len(_d), _d)
+    _d = b''.join([hm, hg])
+    add = b"a:17:32:%d\n%s" % (len(_d), _d)
+    sub = b"s:18:32:%d\n%s" % (len(_d), _d)
 
     def setUp(self):
         self.maxDiff = None
@@ -98,7 +99,7 @@ class ShavarTestCase(TestCase):
 
 def chunkit(n, typ, *urls):
     return Chunk(number=n, chunk_type=typ,
-                 hashes=[hashlib.sha256(u).digest() for u in urls])
+                 hashes=[hashlib.sha256(u.encode()).digest() for u in urls])
 
 
 DELTA_RESULT = ChunkList(add_chunks=[chunkit(1, 'a',

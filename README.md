@@ -9,20 +9,24 @@ speaks, see:
 Running locally
 ---------------
 
-For dev testing you probably want to run from a virtualenv::
+For dev testing, create and activate a virtual environment:
 
-    virtualenv shavar
+    virtualenv -p python3.7 shavar
     source shavar/bin/activate
 
 Install the necessary dependencies:
 
-    pip install -r requirements.txt
+    pip install -r requirements-test.txt
 
-Run unit tests to be sure it isn' horribly broken::
+Run code style check:
 
-    make test
+    flake8 --exclude ./shavar/lib,./shavar/bin,./build,./deactivate,./.local
 
-Configure for running locally in a development environment::
+Run unit tests:
+
+    nosetests -s --nologcapture ./shavar/tests
+
+Configure for running locally in a development environment:
 
     python setup.py develop
 
@@ -44,7 +48,15 @@ and a section for each of those lists declaring at least the two minimum
 required configuration directives for each list. Read shavar-server-list-config
 for more examples of Shavar configurations.
 
-A commented example configuration::
+Since the tracking protection files (AKA block lists and entity lists) are hosted in S3 by [shavar-list-creation](https://github.com/mozilla-services/shavar-list-creation/), your Shavar dev environment will need to setup AWS keys to retrieve those files. For more information on configuration for `boto` see:
+
+  https://github.com/boto/boto/#getting-started-with-boto
+
+When an update is needed on a tracking protection file, Shavar responds with a CDN link to download the latest files. You will need to setup a CDN in front of your S3 bucket using AWS's CloudFront. For more information on setting up CloudFront on your S3 bucket see:
+
+  https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/GettingStarted.SimpleDistribution.html
+
+A commented example configuration:
 
     [shavar]
     # A newline separated list of the lists to be served.  The names given

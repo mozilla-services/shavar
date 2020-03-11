@@ -1,4 +1,4 @@
-import StringIO
+import io
 
 from shavar.exceptions import ParseError
 from shavar.parse import (
@@ -137,17 +137,20 @@ class ParseTest(ShavarTestCase):
         self.assertRaises(LimitExceededError, parse_downloads,
                           dummy("mozpub-track-digest256;a:1-1002"))
 
+        self.assertRaises(ParseError, parse_downloads,
+                          dummy("mozpub-track-digest256"))
+
     def test_parse_gethash(self):
-        h = "4:32\n"
-        d = ("\xdd\x01J\xf5",
-             "\xedk8\xd9",
-             "\x13\x0e?F",
-             "o\x85\x0eF",
-             "\xd2\x1b\x95\x11",
-             "\x99\xd5:\x18",
-             "\xef)\xee\x93",
-             "AaN\xaf")
-        s = ''
+        h = b"4:32\n"
+        d = (b"\xdd\x01J\xf5",
+             b"\xedk8\xd9",
+             b"\x13\x0e?F",
+             b"o\x85\x0eF",
+             b"\xd2\x1b\x95\x11",
+             b"\x99\xd5:\x18",
+             b"\xef)\xee\x93",
+             b"AaN\xaf")
+        s = b''
         s += h
         for i in d:
             s += i
@@ -155,9 +158,9 @@ class ParseTest(ShavarTestCase):
         self.assertEqual(p, set(d))
         # Make sure no repeats of issue #32 pop up: test with a single hash
         # prefix
-        s = "4:4\n\xdd\x01J\xf5"
+        s = b"4:4\n\xdd\x01J\xf5"
         p = parse_gethash(dummy(s, path="/gethash"))
-        self.assertEqual(p, set(["\xdd\x01J\xf5"]))
+        self.assertEqual(p, set([b"\xdd\x01J\xf5"]))
 
     def test_parse_gethash_errors(self):
         # Too short
@@ -204,14 +207,14 @@ class ParseTest(ShavarTestCase):
         # Stated length of payload is longer than actual payload.  Only 7
         # bytes instead of 8 here.
         with self.assertRaises(ParseError) as ecm:
-            parse_gethash(dummy("4:8\n\xdd\x01J\xf5\xedk8"))
+            parse_gethash(dummy(b"4:8\n\xdd\x01J\xf5\xedk8"))
         self.assertEqual(str(ecm.exception),
                          "Hash read mismatch: client claimed 2, read 1")
 
     def test_parse_file_source(self):
-        d = ''.join([self.hm, self.hg])
-        add = "a:17:32:%d\n%s" % (len(d), d)
-        sub = "s:18:32:%d\n%s" % (len(d), d)
+        d = b''.join([self.hm, self.hg])
+        add = b"a:17:32:%d\n%s" % (len(d), d)
+        sub = b"s:18:32:%d\n%s" % (len(d), d)
 
         adds = [Chunk(chunk_type='a', number=17, hashes=set([self.hg,
                                                              self.hm]),
@@ -220,24 +223,26 @@ class ParseTest(ShavarTestCase):
                                                              self.hm]),
                       hash_size=32)]
 
-        self.assertEqual(parse_file_source(StringIO.StringIO(add)),
+        self.assertEqual(parse_file_source(io.BytesIO(add)),
                          ChunkList(add_chunks=adds))
-        self.assertEqual(parse_file_source(StringIO.StringIO(sub)),
+        self.assertEqual(parse_file_source(io.BytesIO(sub)),
                          ChunkList(sub_chunks=subs))
         # Both adds and subs with a spurious newline in between
-        both = "%s\n%s" % (add, sub)
-        self.assertEqual(parse_file_source(StringIO.StringIO(both)),
+        both = b"%s\n%s" % (add, sub)
+        self.assertEqual(parse_file_source(io.BytesIO(both)),
                          ChunkList(add_chunks=adds, sub_chunks=subs))
 
     def test_parse_file_source_delta(self):
-        p = parse_file_source(open(test_file('delta_chunk_source')))
+        p = parse_file_source(open(test_file('delta_chunk_source'), 'rb'))
         self.assertEqual(p, DELTA_RESULT)
 
     def test_parse_file_source_errors(self):
         pass
 
     def test_parse_dir_source(self):
-        p = parse_dir_source(open(test_file('delta_dir_source/index.json')))
+        p = parse_dir_source(
+            open(test_file('delta_dir_source/index.json'), 'rb')
+        )
         self.assertEqual(p, DELTA_RESULT)
         # Test with the use of basedir
         p = parse_dir_source(open(test_file('index.json')))

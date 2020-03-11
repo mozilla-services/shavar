@@ -7,8 +7,6 @@ with open(os.path.join(here, 'README.md')) as f:
     README = f.read()
 with open(os.path.join(here, 'CHANGES.txt')) as f:
     CHANGES = f.read()
-with open(os.path.join(here, 'requirements.txt')) as f:
-    requires = f.read()
 
 
 setup(name='shavar',
@@ -28,8 +26,6 @@ setup(name='shavar',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
-      install_requires=requires,
-      tests_require=requires,
       test_suite="shavar",
       entry_points="""\
       [paste.app_factory]

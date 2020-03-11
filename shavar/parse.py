@@ -19,6 +19,7 @@ def parse_downloads(request):
         if not line or line.isspace():
             continue
 
+        line = line.decode()
         # Did client provide max size preference?
         if line.startswith("s;"):
             if lineno != 0:
@@ -34,7 +35,7 @@ def parse_downloads(request):
             continue
 
         if ";" not in line:
-            return ParseError("Bad downloads request: no semi-colon")
+            raise ParseError("Bad downloads request: no semi-colon")
 
         lname, chunklist = line.split(";", 1)
         if not lname or '-' not in lname:
@@ -95,7 +96,7 @@ def parse_gethash(request):
     # reasonably sized header.  Reasonable size defined as an arbitrary max
     # of 2**8 bytes and a minimum of 3("4:4", a single prefix).  256 is
     # probably waaaaaaaaaaay too large for a gethash request header.
-    eoh = request.body.find('\n')
+    eoh = request.body.find(b'\n')
     if eoh < 3 or eoh >= 256:
         raise ParseError("Improbably small or large gethash header size: %d"
                          % eoh)
@@ -103,7 +104,7 @@ def parse_gethash(request):
     body_file = request.body_file
 
     # determine size of individual prefixes and length of payload
-    header = body_file.readline()
+    header = body_file.readline().decode()
     try:
         prefix_len, payload_len = [int(x) for x in header.split(':', 1)]
     except ValueError:
@@ -112,7 +113,7 @@ def parse_gethash(request):
             or (payload_len < prefix_len)):
         raise ParseError("Payload length invalid: \"%d\"" % payload_len)
 
-    prefix_total = payload_len / prefix_len
+    prefix_total = payload_len // prefix_len
     prefixes_read = 0
     total_read = 0
     while prefixes_read < prefix_total:
@@ -132,6 +133,15 @@ def parse_gethash(request):
                          (payload_len, total_read))
 
     return set(parsed)  # unique-ify
+
+
+def get_header(blob, eol):
+    try:
+        header = blob[:eol].decode()
+    except UnicodeDecodeError:
+        raise ParseError('Invalid unicode string found in chunk header: '
+                         '"%s"' % blob[:eol])
+    return header
 
 
 def parse_file_source(handle):
@@ -161,7 +171,7 @@ def parse_file_source(handle):
         blob = handle.read(32)
 
         # Consume any unnecessary newlines in front of chunks
-        blob = blob.lstrip('\n')
+        blob = blob.lstrip(b'\n')
 
         if not blob:
             break
@@ -170,10 +180,10 @@ def parse_file_source(handle):
             raise ParseError("Incomplete chunk file? Could only read %d "
                              "bytes of header." % len(blob))
 
-        eol = blob.find('\n')
+        eol = blob.find(b'\n')
         if eol < 8:
             raise ParseError('Impossibly short chunk header: "%s"' % eol)
-        header = blob[:eol]
+        header = get_header(blob, eol)
 
         if header.count(':') != 3:
             raise ParseError('Incorrect number of fields in chunk header: '
@@ -243,7 +253,7 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
     """
     try:
         index = json.load(handle)
-    except ValueError, e:
+    except ValueError as e:
         raise ParseError("Could not parse index file: %s" % e)
 
     if 'name' not in index:
@@ -256,19 +266,21 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
         basedir = posixpath.join(os.path.dirname(handle.name),
                                  index['basedir'])
     else:
-        basedir = os.path.dirname(handle.name)
+        handle_name = handle.name
+        if isinstance(handle_name, int):
+            handle_name = str(handle_name)
+        basedir = os.path.dirname(handle_name)
 
     parsed = ChunkList()
-    for key in index['chunks'].iterkeys():
+    int_key_chunks = {}
+    for key in index['chunks'].keys():
         # A little massaging to make the data structure a little cleaner
         try:
-            index['chunks'][int(key)] = index['chunks'][key]
-            del index['chunks'][key]
+            int_key_chunks[int(key)] = index['chunks'][key]
         except KeyError:
             raise ParseError("Some weird behaviour with the list of chunks "
                              "in \"%s\"" % handle.filename)
-
-        chunk_file = posixpath.join(basedir, key)
+        chunk_file = posixpath.join(basedir, str(key))
 
         if not exists_cb(chunk_file):
             raise ParseError("Invalid chunk filename: \"%s\"" % chunk_file)
@@ -281,8 +293,8 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
             raise ParseError("More than one chunk in chunk file \"%s\""
                              % chunk_file)
 
-        for chunk in itertools.chain(chunk_list.adds.itervalues(),
-                                     chunk_list.subs.itervalues()):
+        for chunk in itertools.chain(iter(chunk_list.adds.values()),
+                                     iter(chunk_list.subs.values())):
             parsed.insert_chunk(chunk)
-
+    index['chunks'] = int_key_chunks
     return parsed
