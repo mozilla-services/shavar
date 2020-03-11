@@ -45,7 +45,8 @@ Configuration
 The shavar service serves changes to a set of hashes of canonicalized URLs.
 Basic configuration consists of specifying the names of the lists to be served
 and a section for each of those lists declaring at least the two minimum
-required configuration directives for each list.
+required configuration directives for each list. Read shavar-server-list-config
+for more examples of Shavar configurations.
 
 Since the tracking protection files (AKA block lists and entity lists) are hosted in S3 by [shavar-list-creation](https://github.com/mozilla-services/shavar-list-creation/), your Shavar dev environment will need to setup AWS keys to retrieve those files. For more information on configuration for `boto` see:
 
