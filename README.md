@@ -9,20 +9,24 @@ speaks, see:
 Running locally
 ---------------
 
-For dev testing you probably want to run from a virtualenv::
+For dev testing, create and activate a virtual environment:
 
-    virtualenv shavar
+    virtualenv -p python3.7 shavar
     source shavar/bin/activate
 
 Install the necessary dependencies:
 
-    pip install -r requirements.txt
+    virtualenv -p python3.7 shavar
 
-Run unit tests to be sure it isn' horribly broken::
+Run code style check:
 
-    make test
+    flake8 --exclude ./shavar/lib,./shavar/bin,./build,./deactivate,./.local
 
-Configure for running locally in a development environment::
+Run unit tests:
+
+    nosetests -s --nologcapture ./shavar/tests
+
+Configure for running locally in a development environment:
 
     python setup.py develop
 
@@ -43,7 +47,7 @@ Basic configuration consists of specifying the names of the lists to be served
 and a section for each of those lists declaring at least the two minimum
 required configuration directives for each list.
 
-A commented example configuration::
+A commented example configuration:
 
     [shavar]
     # A newline separated list of the lists to be served.  The names given
