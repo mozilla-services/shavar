@@ -16,7 +16,7 @@ For dev testing, create and activate a virtual environment:
 
 Install the necessary dependencies:
 
-    virtualenv -p python3.7 shavar
+    pip install -r requirements-test.txt
 
 Run code style check:
 
