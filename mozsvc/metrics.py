@@ -22,6 +22,7 @@ import functools
 
 import pyramid.threadlocal
 from pyramid.events import ContextFound
+from mozsvc.config import get_configurator
 
 
 logger = logging.getLogger("mozsvc.metrics")
@@ -93,12 +94,18 @@ def finalize_request_metrics(request, message=None):
         start_time = request.metrics.pop("request_start_time")
         request.metrics["request_time"] = timeit.default_timer() - start_time
         request.metrics["code"] = 999
+    config = get_configurator()
+    supress_status_messages = config.registry.settings.get('loggers.status_messages', None)
+    if not lists_to_serve:
+        raise ValueError("status_messages appears to be empty or missing "
+                         "in the config \"%s\"!" % config.filename)
     # Emit the a summary log line.
-    if message is None:
-        # import ipdb; ipdb.set_trace()
-        logger.info(json.dumps(request.metrics), extra=request.metrics)
-    else:
-        logger.info(message, extra=request.metrics)
+    if supress_status_messages:
+       if message is None:
+            # import ipdb; ipdb.set_trace()
+            logger.info(json.dumps(request.metrics), extra=request.metrics)
+       else:
+            logger.info(message, extra=request.metrics)
 
 
 def annotate_request(request, key, value):
