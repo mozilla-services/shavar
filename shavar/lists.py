@@ -68,9 +68,9 @@ def add_versioned_lists_to_registry(
                     'since the file does not exist in S3'
                 )
                 logger.error(err_msg.format(ver, list_name))
-                original_source = settings['source'].replace(
-                    versioned_path.format(branch_name), original_path)
-                settings['source'] = original_source
+                # original_source = settings['source'].replace(
+                #     versioned_path.format(branch_name), original_path)
+                # settings['source'] = original_source
                 continue
             versioned_list_name = get_versioned_list_name(
                 branch_name, list_name)
