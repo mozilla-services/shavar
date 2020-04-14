@@ -107,7 +107,6 @@ class AddVersionedListsTest(ShavarTestCase):
     dir_bucket_name = 'pickle-farthing'
     dir_list_name = 'test-track-digest256'
 
-
     def setUp(self):
         self.mock = mock_s3()
         self.mock.start()
@@ -202,8 +201,8 @@ class AddVersionedListsTest(ShavarTestCase):
         type_ = 'digest256'
         shavar_prod_lists_branches = [{'name': '69.0'}]
         add_versioned_lists_to_registry(
-                settings, serving, ver_lists, type_, list_name,
-                shavar_prod_lists_branches
+            settings, serving, ver_lists, type_, list_name,
+            shavar_prod_lists_branches
         )
         self.assertIn(list_name, serving)
         self.assertIn('69.0-' + list_name, serving)
@@ -225,8 +224,8 @@ class AddVersionedListsTest(ShavarTestCase):
         type_ = 'digest256'
         shavar_prod_lists_branches = [{'name': '68.0'}, {'name': '69.0'}]
         add_versioned_lists_to_registry(
-                settings, serving, ver_lists, type_, list_name,
-                shavar_prod_lists_branches
+            settings, serving, ver_lists, type_, list_name,
+            shavar_prod_lists_branches
         )
         self.assertIn(list_name, serving)
         self.assertIn('69.0-' + list_name, serving)
