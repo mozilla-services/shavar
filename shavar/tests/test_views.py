@@ -18,7 +18,7 @@ class ViewTests(ShavarTestCase):
         response = list_view(request)
         self.assertEqual(response.text,
                          "moz-abp-shavar\nmozpub-track-digest256\n"
-                         "testpub-bananas-digest256\n")
+                         "test-track-digest256\ntestpub-bananas-digest256\n")
 
     def test_3_newkey_view(self):
         # from shavar.views import newkey_view
