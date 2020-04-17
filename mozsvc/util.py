@@ -141,6 +141,7 @@ class JsonLogFormatter(logging.Formatter):
         # Only include the 'message' key if it has useful content
         # and is not already a JSON blob.
         message = record.getMessage()
+        record.message = message
         if message:
             if not message.startswith("{") and not message.endswith("}"):
                 details["message"] = message
