@@ -53,6 +53,9 @@ def get_configurator(global_config, **settings):
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
+    import sentry_sdk
+
+    sentry_sdk.init(dsn='')
     config = get_configurator(global_config, **settings)
     app = config.make_wsgi_app()
     refreshListsConfigThread = RefreshListsConfigThread(
