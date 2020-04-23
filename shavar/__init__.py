@@ -1,6 +1,9 @@
 import logging
+import re
 import threading
 import time
+
+import sentry_sdk
 
 import shavar.lists
 
@@ -49,8 +52,9 @@ def get_configurator(global_config, **settings):
         config.end()
     return config
 
+
 def filter_errors(event, hint):
-    if  'logentry' in event and 'message' in event['logentry']:
+    if 'logentry' in event and 'message' in event['logentry']:
         message = event['logentry']['message']
         patterns = ['(Invalid RANGE "[0-9]{10})', '(Invalid LISTINFO)',
                     '(Invalid list name)']
@@ -59,14 +63,19 @@ def filter_errors(event, hint):
             return None
     return event
 
+
+def configure_sentry(config):
+    dsn = config.registry.settings.get('handler_sentry.dsn')
+    if dsn:
+        sentry_sdk.init(dsn=dsn)
+
+
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
-    import sentry_sdk
 
-    sentry_sdk.init(dsn='',
-        before_send=filter_errors)
     config = get_configurator(global_config, **settings)
+    configure_sentry(config)
     app = config.make_wsgi_app()
     refreshListsConfigThread = RefreshListsConfigThread(
         config.registry.settings.get(
