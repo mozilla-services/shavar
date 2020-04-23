@@ -49,13 +49,23 @@ def get_configurator(global_config, **settings):
         config.end()
     return config
 
+def filter_errors(event, hint):
+    if  'logentry' in event and 'message' in event['logentry']:
+        message = event['logentry']['message']
+        patterns = ['(Invalid RANGE "[0-9]{10})', '(Invalid LISTINFO)',
+                    '(Invalid list name)']
+        m = re.match('|'.join(patterns), message)
+        if m is not None:
+            return None
+    return event
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
     import sentry_sdk
 
-    sentry_sdk.init(dsn='')
+    sentry_sdk.init(dsn='',
+        before_send=filter_errors)
     config = get_configurator(global_config, **settings)
     app = config.make_wsgi_app()
     refreshListsConfigThread = RefreshListsConfigThread(
