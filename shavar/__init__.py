@@ -67,7 +67,7 @@ def filter_errors(event, hint):
 def configure_sentry(config):
     dsn = config.registry.settings.get('handler_sentry.dsn')
     if dsn:
-        sentry_sdk.init(dsn=dsn)
+        sentry_sdk.init(dsn=dsn, before_send=filter_errors)
 
 
 def main(global_config, **settings):
