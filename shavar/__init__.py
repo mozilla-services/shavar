@@ -54,17 +54,6 @@ def get_configurator(global_config, **settings):
     return config
 
 
-def filter_errors(event, hint):
-    if 'logentry' in event and 'message' in event['logentry']:
-        message = event['logentry']['message']
-        patterns = ['(Invalid RANGE "[0-9]{10})', '(Invalid LISTINFO)',
-                    '(Invalid list name)']
-        m = re.match('|'.join(patterns), message)
-        if m is not None:
-            return None
-    return event
-
-
 def configure_sentry(config):
     dsn = config.registry.settings.get('shavar.sentry_dsn')
     if dsn:
