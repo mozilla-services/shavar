@@ -25,7 +25,7 @@ jobs:
       - run:
           name: Test
           command: |
-            docker run -d -p 8080:8080 --name shavar-test app:build START
+            docker run -d -p 8080:8080 -e SENTRY_DSN= --name shavar-test app:build START
             sleep 20
             docker exec shavar-test /bin/sh -c 'curl -d " " --retry 2 --retry-delay 2 --connect-timeout 10 -m 11 -v http://127.0.0.1:8080/list?client=foo&appver=1&pver=2.2'
       - run:

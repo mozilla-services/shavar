@@ -2,6 +2,9 @@ import logging
 import threading
 import time
 
+import sentry_sdk
+from sentry_sdk.integrations.pyramid import PyramidIntegration
+
 import shavar.lists
 
 
@@ -50,10 +53,21 @@ def get_configurator(global_config, **settings):
     return config
 
 
+def configure_sentry(config):
+    dsn = config.registry.settings.get('shavar.sentry_dsn')
+    if dsn:
+        sentry_sdk.init(
+            dsn=dsn,
+            integrations=[PyramidIntegration()],
+        )
+
+
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
+
     config = get_configurator(global_config, **settings)
+    configure_sentry(config)
     app = config.make_wsgi_app()
     refreshListsConfigThread = RefreshListsConfigThread(
         config.registry.settings.get(
