@@ -12,6 +12,7 @@ from pyramid.httpexceptions import (
     HTTPNotFound,
     HTTPInternalServerError)
 
+from sentry_sdk import capture_exception
 from shavar.exceptions import ConfigurationError, ParseError
 from shavar.lists import get_list, lookup_prefixes
 from shavar.parse import parse_downloads, parse_gethash
@@ -100,7 +101,7 @@ def downloads_view(request):
     try:
         parsed = parse_downloads(request)
     except ParseError as e:
-        logger.error(e)
+        capture_exception(e)
         raise HTTPBadRequest(e)
 
     for list_info in parsed:

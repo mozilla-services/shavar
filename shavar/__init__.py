@@ -54,23 +54,12 @@ def get_configurator(global_config, **settings):
     return config
 
 
-def group_errors(event, hint):
-    if 'logentry' in event and 'message' in event['logentry']:
-        message = event['logentry']['message']
-        pattern = 'Invalid RANGE "[0-9]{10}'
-        if re.match(pattern, message) is not None:
-            event['fingerprint'] = ['invalid-range']
-            return event
-    return event
-
-
 def configure_sentry(config):
     dsn = config.registry.settings.get('shavar.sentry_dsn')
     if dsn:
         sentry_sdk.init(
             dsn=dsn,
-            integrations=[PyramidIntegration()],
-            before_send=group_errors
+            integrations=[PyramidIntegration()]
         )
 
 
