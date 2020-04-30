@@ -58,7 +58,7 @@ def configure_sentry(config):
     if dsn:
         sentry_sdk.init(
             dsn=dsn,
-            integrations=[PyramidIntegration()],
+            integrations=[PyramidIntegration()]
         )
 
 
