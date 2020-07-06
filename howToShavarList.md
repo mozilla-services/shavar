@@ -72,3 +72,4 @@ To update list contents ...
 2. Ideally, the repository contains some automated checks
 3. Receive a review and merge from another maintainer of the "upstream" repo
 4. Within 30 minutes of the merge, shavar should be serving the new list contents
+
