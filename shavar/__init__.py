@@ -8,7 +8,7 @@ from sentry_sdk.integrations.pyramid import PyramidIntegration
 import shavar.lists
 
 
-__version__ = '0.12.8.5'
+__version__ = '0.13.5'
 DEFAULT_REFRESH_LISTS_DELAY = 600  # 10m
 logger = logging.getLogger('shavar')
 
