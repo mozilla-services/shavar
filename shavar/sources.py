@@ -7,7 +7,7 @@ import time
 from urllib.parse import urlparse
 
 from boto.exception import S3ResponseError
-from boto.s3.connection import S3Connection
+from boto import connect_s3
 
 from shavar.exceptions import NoDataError, ParseError
 from shavar.parse import parse_dir_source, parse_file_source
@@ -147,7 +147,7 @@ class S3FileSource(Source):
 
     def _get_key(self):
         try:
-            conn = S3Connection()
+            conn = boto.connect_s3()
             bucket = conn.get_bucket(self.url.netloc)
         except S3ResponseError as e:
             raise NoDataError("Could not find bucket \"%s\": %s"
@@ -188,7 +188,7 @@ class S3DirectorySource(S3FileSource):
 
     def load(self):
         # for the closures to minimize the number of connections to S3
-        conn = S3Connection()
+        conn = boto.connect_s3()
 
         try:
             bucket = conn.get_bucket(self.url.netloc)
