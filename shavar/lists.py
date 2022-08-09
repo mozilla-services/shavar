@@ -16,9 +16,14 @@ from shavar.sources import (
 
 logger = logging.getLogger('shavar')
 OLDEST_SUPPORTED_VERSION = '69.0'
+VERSION_EMAIL_CATEGORY_INTRODUCED = 97
+EMAIL_TRACKER_LISTS = [
+    'base-email-track-digest256',
+    'content-email-track-digest256'
+]
 GITHUB_API_URL = 'https://api.github.com'
 SHAVAR_PROD_LISTS_BRANCHES_PATH = (
-    '/repos/mozilla-services/shavar-prod-lists/branches'
+    '/repos/mozilla-services/shavar-prod-lists/branches?per_page=100'
 )
 
 
@@ -51,6 +56,13 @@ def add_versioned_lists_to_registry(
         branch_name = branch.get('name')
         ver = version.parse(branch_name)
         if isinstance(ver, version.Version):
+            skip_versioned_list = (
+                type(ver.major) == int
+                and ver.major < VERSION_EMAIL_CATEGORY_INTRODUCED
+                and list_name in EMAIL_TRACKER_LISTS
+            )
+            if skip_versioned_list:
+                continue
             original_path, versioned_path = get_original_and_versioned_paths(
                 settings['source']
             )
