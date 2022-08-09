@@ -16,6 +16,7 @@ from shavar.sources import (
 
 logger = logging.getLogger('shavar')
 OLDEST_SUPPORTED_VERSION = '69.0'
+VERSION_EMAIL_CATEGORY_INTRODUCED = 97
 GITHUB_API_URL = 'https://api.github.com'
 SHAVAR_PROD_LISTS_BRANCHES_PATH = (
     '/repos/mozilla-services/shavar-prod-lists/branches'
@@ -51,6 +52,8 @@ def add_versioned_lists_to_registry(
         branch_name = branch.get('name')
         ver = version.parse(branch_name)
         if isinstance(ver, version.Version):
+            if type(ver.major) == int and ver.major < VERSION_EMAIL_CATEGORY_INTRODUCED:
+                continue
             original_path, versioned_path = get_original_and_versioned_paths(
                 settings['source']
             )
