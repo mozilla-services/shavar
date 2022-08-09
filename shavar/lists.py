@@ -19,7 +19,7 @@ OLDEST_SUPPORTED_VERSION = '69.0'
 VERSION_EMAIL_CATEGORY_INTRODUCED = 97
 GITHUB_API_URL = 'https://api.github.com'
 SHAVAR_PROD_LISTS_BRANCHES_PATH = (
-    '/repos/mozilla-services/shavar-prod-lists/branches'
+    '/repos/mozilla-services/shavar-prod-lists/branches?per_page=100'
 )
 
 
