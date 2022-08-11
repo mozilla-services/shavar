@@ -53,7 +53,18 @@ def add_versioned_lists_to_registry(
         shavar_prod_lists_branches
 ):
     for branch in shavar_prod_lists_branches:
-        branch_name = branch.get('name')
+        try:
+            branch_name = branch.get('name')
+        except AttributeError as e:
+            logger.error(
+                'shavar_prod_lists_branches_error',
+                extra={
+                    'branch': branch,
+                    'branches': shavar_prod_lists_branches,
+                    'error_message': e,
+                }
+            )
+            continue
         ver = version.parse(branch_name)
         if isinstance(ver, version.Version):
             skip_versioned_list = (
