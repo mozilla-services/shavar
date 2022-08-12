@@ -67,13 +67,6 @@ def add_versioned_lists_to_registry(
             continue
         ver = version.parse(branch_name)
         if isinstance(ver, version.Version):
-            skip_versioned_list = (
-                type(ver.major) == int
-                and ver.major < VERSION_EMAIL_CATEGORY_INTRODUCED
-                and list_name in EMAIL_TRACKER_LISTS
-            )
-            if skip_versioned_list:
-                continue
             original_path, versioned_path = get_original_and_versioned_paths(
                 settings['source']
             )
