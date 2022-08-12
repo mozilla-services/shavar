@@ -61,19 +61,12 @@ def add_versioned_lists_to_registry(
                 extra={
                     'branch': branch,
                     'branches': shavar_prod_lists_branches,
-                    'error_message': e,
+                    'error_message': e.__str__(),
                 }
             )
             continue
         ver = version.parse(branch_name)
         if isinstance(ver, version.Version):
-            skip_versioned_list = (
-                type(ver.major) == int
-                and ver.major < VERSION_EMAIL_CATEGORY_INTRODUCED
-                and list_name in EMAIL_TRACKER_LISTS
-            )
-            if skip_versioned_list:
-                continue
             original_path, versioned_path = get_original_and_versioned_paths(
                 settings['source']
             )
