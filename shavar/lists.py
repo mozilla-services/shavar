@@ -61,7 +61,7 @@ def add_versioned_lists_to_registry(
                 extra={
                     'branch': branch,
                     'branches': shavar_prod_lists_branches,
-                    'error_message': e,
+                    'error_message': e.__str__(),
                 }
             )
             continue
