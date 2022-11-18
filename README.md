@@ -73,6 +73,10 @@ A commented example configuration:
     # are not provided in the list specific stanzas.  Not necessary if you
     # provide absolute paths.
     lists_root = tests
+    sentry_dsn = ""
+    # The DSN from the "Client Keys" section in the project settings in Sentry
+    sentry_env = ""
+    # The environment to use for sentry, e.g. dev, stage, or prod
 
     # This is the public host and scheme to reach the service
     # like https://shavar.stage.mozaws.net
