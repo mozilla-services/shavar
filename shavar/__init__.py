@@ -61,7 +61,8 @@ def configure_sentry(config):
             env_option = {"environment": SENTRY_ENV}
         sentry_sdk.init(
             dsn=dsn,
-            integrations=[PyramidIntegration(), **env_option]
+            integrations=[PyramidIntegration()],
+            **env_option
         )
 
 
