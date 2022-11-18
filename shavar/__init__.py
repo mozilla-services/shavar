@@ -55,10 +55,15 @@ def get_configurator(global_config, **settings):
 
 def configure_sentry(config):
     dsn = config.registry.settings.get('shavar.sentry_dsn')
+    sentry_env = config.registry.settings.get('shavar.sentry_env')
     if dsn:
+        env_option = {}
+        if sentry_env:
+            env_option = {"environment": sentry_env}
         sentry_sdk.init(
             dsn=dsn,
-            integrations=[PyramidIntegration()]
+            integrations=[PyramidIntegration()],
+            **env_option
         )
 
 
