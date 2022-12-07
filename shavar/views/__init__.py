@@ -122,6 +122,10 @@ def downloads_view(request):
 
         app_ver = str(request.GET['appver'])
         sblist, list_ver = get_list(request, list_info.name, app_ver)
+        if sblist is None:
+            logger.warn('Unable to serve list "%s"; ignoring'
+                        % list_info.name)
+            continue
 
         # Calculate delta
         to_add, to_sub = sblist.delta(list_info.adds, list_info.subs)
