@@ -79,11 +79,11 @@ def add_versioned_lists_to_registry(
             try:
                 list_._source.load()
             except NoDataError:
-                err_msg = (
+                info_msg = (
                     'Skipping {0} version support for {1} '
                     'since the file does not exist in S3'
                 )
-                logger.error(err_msg.format(ver, list_name))
+                logger.info(info_msg.format(ver, list_name))
                 original_source = settings['source'].replace(
                     versioned_path.format(branch_name), original_path)
                 settings['source'] = original_source
@@ -240,7 +240,7 @@ def get_list(request, list_name, app_ver='none'):
     all_supported_versions = request.registry['shavar.versioned_lists']
     list_name, list_ver = match_with_versioned_list(
         app_ver, all_supported_versions.get(list_name), list_name)
-    registry_val = request.registry['shavar.serving'][list_name]
+    registry_val = request.registry['shavar.serving'].get(list_name)
     return registry_val, list_ver
 
 
