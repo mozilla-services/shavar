@@ -5,34 +5,41 @@ speaks, see:
 
   https://developers.google.com/safe-browsing/developers_guide
 
+Local Development (Docker)
+--------------------------
 
-Running locally
----------------
+To have a running copy of shavar locally for devopment and testing, please follow the following steps:
 
-For dev testing, create and activate a virtual environment:
+#### Build docker image tagged mozilla/shavar
 
-    virtualenv -p python3.7 shavar
-    source shavar/bin/activate
+    docker build -t mozilla/shavar .
+
+#### Run image with container name shavar
+
+    docker run --name shavar -p 127.0.0.1:80:8080/tcp mozilla/shavar
+
+*The container name shavar could be changed to whatever name you want*
 
 Install the necessary dependencies:
 
-    pip install -r requirements-test.txt
+    docker exec shavar pip install -r requirements-test.txt
 
-Run code style check:
+#### Run code style check
 
-    flake8 --exclude ./shavar/lib,./shavar/bin,./build,./deactivate,./.local
+    docker exec shavar flake8 --exclude ./shavar/lib,./shavar/bin,./build,./deactivate,./.local
 
-Run unit tests:
+#### Run unit tests
+Before running tests run the following command to create version.json: `docker exec shavar echo '{"commit":"1","version":test","source":"testing"}' > version.json`
 
-    nosetests -s --nologcapture ./shavar/tests
+    docker exec shavar nosetests -s --nologcapture ./shavar/tests
 
 Configure for running locally in a development environment:
 
-    python setup.py develop
+    docker exec shavar python setup.py develop
 
 Run the service locally:
 
-    pserve shavar.testing.ini
+    docker exec shavar pserve shavar.testing.ini
 
 By default the service listens on port the loopback interface, port 6543.  If
 you want to change this, modify the values in the INI file's [server:main]
