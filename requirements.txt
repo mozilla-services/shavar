@@ -53,5 +53,5 @@ statsd==3.3.0 \
 swagger-parser==1.0.1 \
     --hash=sha256:0802ea49468fab102ed8cb8a6cc6c41423ad60fd396c14a2f187c7d5165f2e18 \
     --hash=sha256:8c0263e3128d3af9150c6fcd83d768967211f3bcb4da330fbe318fb44e38bdd2
-uWSGI==2.0.18 \
-    --hash=sha256:4972ac538800fb2d421027f49b4a1869b66048839507ccf0aa2fda792d99f583
+uWSGI==2.0.22 \
+    --hash=sha256:4cc4727258671ac5fa17ab422155e9aaef8a2008ebb86e4404b66deaae965db2
