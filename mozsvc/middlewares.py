@@ -7,11 +7,12 @@
 """
 Various utilities
 """
+
 from hashlib import md5
 import traceback
 import random
 import string
-import simplejson as json
+import json
 import re
 import os
 import logging
@@ -27,7 +28,7 @@ else:
 
 
 random.seed()
-_RE_CODE = re.compile('[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}')
+_RE_CODE = re.compile("[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}")
 
 
 def randchar(chars=string.digits + string.ascii_letters):
@@ -39,7 +40,7 @@ def randchar(chars=string.digits + string.ascii_letters):
     http://bitbucket.org/haypo/hasard/src/tip/doc/common_errors.rst
     """
     try:
-        pos = int(float(ord(os.urandom(1))) * 256. / 255.)
+        pos = int(float(ord(os.urandom(1))) * 256.0 / 255.0)
         return chars[pos % len(chars)]
     except NotImplementedError:
         return random.choice(chars)
@@ -48,14 +49,14 @@ def randchar(chars=string.digits + string.ascii_letters):
 def _resolve_name(name):
     """Resolves the name and returns the corresponding object."""
     ret = None
-    parts = name.split('.')
+    parts = name.split(".")
     cursor = len(parts)
     module_name = parts[:cursor]
     last_exc = None
 
     while cursor > 0:
         try:
-            ret = __import__('.'.join(module_name))
+            ret = __import__(".".join(module_name))
             break
         except ImportError as exc:
             last_exc = exc
@@ -82,24 +83,25 @@ def _resolve_name(name):
 
 class CatchErrorMiddleware(object):
     """Middleware that catches error, log them and return a 500"""
+
     def __init__(self, app, config):
         self.app = app
         try:
-            logger_name = config.get('global', 'logger_name')
+            logger_name = config.get("global", "logger_name")
         except NoOptionError:
-            logger_name = 'root'
+            logger_name = "root"
 
         self.logger = logging.getLogger(logger_name)
         try:
-            hook = config.get('global', 'logger_hook')
+            hook = config.get("global", "logger_hook")
             self.hook = _resolve_name(hook)
         except NoOptionError:
             self.hook = None
 
         try:
-            self.ctype = config.get('global', 'logger_type')
+            self.ctype = config.get("global", "logger_type")
         except NoOptionError:
-            self.ctype = 'application/json'
+            self.ctype = "application/json"
 
     def __call__(self, environ, start_response):
         try:
@@ -109,14 +111,14 @@ class CatchErrorMiddleware(object):
             hash = create_hash(err)
             self.logger.error(hash)
             self.logger.error(err)
-            start_response('500 Internal Server Error',
-                           [('content-type', self.ctype)])
+            start_response("500 Internal Server Error", [("content-type", self.ctype)])
 
             response = json.dumps("application error: crash id %s" % hash)
             if self.hook:
                 try:
-                    response = self.hook({'error': err, 'crash_id': hash,
-                                          'environ': environ})
+                    response = self.hook(
+                        {"error": err, "crash_id": hash, "environ": environ}
+                    )
                 except Exception:
                     pass
 
@@ -124,7 +126,7 @@ class CatchErrorMiddleware(object):
 
 
 def make_err_mdw(app, global_conf, **conf):
-    config = app.registry.settings['config']
+    config = app.registry.settings["config"]
     return CatchErrorMiddleware(app, config)
 
 
@@ -132,6 +134,6 @@ def create_hash(data):
     """Creates a unique hash using the data provided
     and a bit of randomness
     """
-    rand = ''.join([randchar() for x in range(10)])
+    rand = "".join([randchar() for x in range(10)])
     data += rand
-    return md5(data + rand).hexdigest()
+    return md5((data + rand).encode("utf-8")).hexdigest()

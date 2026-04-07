@@ -10,8 +10,7 @@ from shavar.types import Chunk, ChunkList, Downloads, DownloadsListInfo
 def parse_downloads(request):
     parsed = Downloads()
 
-    limit = request.registry.settings.get("shavar.max_downloads_chunks",
-                                          10000)
+    limit = request.registry.settings.get("shavar.max_downloads_chunks", 10000)
 
     for lineno, line in enumerate(request.body_file):
         line = line.strip()
@@ -23,7 +22,7 @@ def parse_downloads(request):
         # Did client provide max size preference?
         if line.startswith("s;"):
             if lineno != 0:
-                return ParseError("Size request can only be the first line!")
+                raise ParseError("Size request can only be the first line!")
             req_size = line.split(";", 1)[1]
             # Almost certainly redundant due to stripping the line above
             req_size = req_size.strip()
@@ -38,15 +37,15 @@ def parse_downloads(request):
             raise ParseError("Bad downloads request: no semi-colon")
 
         lname, chunklist = line.split(";", 1)
-        if not lname or '-' not in lname:
-            raise ParseError("Invalid list name: \"%s\"" % lname)
+        if not lname or "-" not in lname:
+            raise ParseError(f'Invalid list name: "{lname}"')
         info = DownloadsListInfo(lname, limit=limit)
 
         chunks = chunklist.split(":")
         # Check for MAC
         if len(chunks) >= 1 and chunks[-1] == "mac":
-            if request.GET.get('pver') == '3.0':
-                raise ParseError('MAC not supported in protocol version 3')
+            if request.GET.get("pver") == "3.0":
+                raise ParseError("MAC not supported in protocol version 3")
             info.wants_mac = True
             chunks.pop(-1)
         # Client claims to have chunks for this list
@@ -55,32 +54,35 @@ def parse_downloads(request):
             continue
         # Uneven number of chunks should only occur if 'mac' was specified
         if len(chunks) % 2 != 0:
-            raise ParseError("Invalid LISTINFO for %s" % lname)
+            raise ParseError(f"Invalid LISTINFO for {lname}")
 
         while chunks:
             ctype = chunks.pop(0)
-            if ctype not in ('a', 's'):
-                raise ParseError("Invalid CHUNKTYPE \"%s\" for %s" % (ctype,
-                                                                      lname))
+            if ctype not in ("a", "s"):
+                raise ParseError(f'Invalid CHUNKTYPE "{ctype}" for {lname}')
 
             list_of_chunks = chunks.pop(0)
-            for chunk in list_of_chunks.split(','):
+            for chunk in list_of_chunks.split(","):
+                if not chunk:
+                    continue
                 try:
                     chunk = int(chunk)
                 except ValueError:
-                    if chunk.find('-'):
-                        low, high = chunk.split('-', 1)
+                    if "-" in chunk:
+                        low, high = chunk.split("-", 1)
                         # FIXME should probably be stricter about testing for
                         #       pure integers only on the input
                         try:
                             low = int(low)
                             high = int(high)
                         except ValueError:
-                            raise ParseError("Invalid RANGE \"%s\" for %s" %
-                                             (chunk, lname))
+                            raise ParseError(
+                                f'Invalid RANGE "{chunk}" for {lname}'
+                            )
                         if low >= high:
-                            raise ParseError("Invalid RANGE \"%s\" for %s" %
-                                             (chunk, lname))
+                            raise ParseError(
+                                f'Invalid RANGE "{chunk}" for {lname}'
+                            )
 
                         info.add_range_claim(ctype, low, high)
                 else:  # Resist temptation to indent!  It's a try/except/else
@@ -96,22 +98,20 @@ def parse_gethash(request):
     # reasonably sized header.  Reasonable size defined as an arbitrary max
     # of 2**8 bytes and a minimum of 3("4:4", a single prefix).  256 is
     # probably waaaaaaaaaaay too large for a gethash request header.
-    eoh = request.body.find(b'\n')
+    eoh = request.body.find(b"\n")
     if eoh < 3 or eoh >= 256:
-        raise ParseError("Improbably small or large gethash header size: %d"
-                         % eoh)
+        raise ParseError(f"Improbably small or large gethash header size: {eoh}")
 
     body_file = request.body_file
 
     # determine size of individual prefixes and length of payload
     header = body_file.readline().decode()
     try:
-        prefix_len, payload_len = [int(x) for x in header.split(':', 1)]
+        prefix_len, payload_len = [int(x) for x in header.split(":", 1)]
     except ValueError:
-        raise ParseError('Invalid prefix or payload size: "%s"' % header)
-    if ((payload_len % prefix_len != 0)
-            or (payload_len < prefix_len)):
-        raise ParseError("Payload length invalid: \"%d\"" % payload_len)
+        raise ParseError(f'Invalid prefix or payload size: "{header}"')
+    if (payload_len % prefix_len != 0) or (payload_len < prefix_len):
+        raise ParseError(f'Payload length invalid: "{payload_len}"')
 
     prefix_total = payload_len // prefix_len
     prefixes_read = 0
@@ -125,12 +125,14 @@ def parse_gethash(request):
         parsed.append(prefix)
 
     if prefixes_read != prefix_total:
-        raise ParseError("Hash read mismatch: client claimed %d, read %d" %
-                         (prefix_total, prefixes_read))
+        raise ParseError(
+            f"Hash read mismatch: client claimed {prefix_total}, read {prefixes_read}"
+        )
 
     if total_read != payload_len:
-        raise ParseError("Mismatch on gethash parse: client: %d, actual: %d" %
-                         (payload_len, total_read))
+        raise ParseError(
+            f"Mismatch on gethash parse: client: {payload_len}, actual: {total_read}"
+        )
 
     return set(parsed)  # unique-ify
 
@@ -139,8 +141,9 @@ def get_header(blob, eol):
     try:
         header = blob[:eol].decode()
     except UnicodeDecodeError:
-        raise ParseError('Invalid unicode string found in chunk header: '
-                         '"%s"' % blob[:eol])
+        raise ParseError(
+            f'Invalid unicode string found in chunk header: "{blob[:eol]}"'
+        )
     return header
 
 
@@ -171,55 +174,55 @@ def parse_file_source(handle):
         blob = handle.read(32)
 
         # Consume any unnecessary newlines in front of chunks
-        blob = blob.lstrip(b'\n')
+        blob = blob.lstrip(b"\n")
 
         if not blob:
             break
 
         if len(blob) < 8:
-            raise ParseError("Incomplete chunk file? Could only read %d "
-                             "bytes of header." % len(blob))
+            raise ParseError(
+                f"Incomplete chunk file? Could only read {len(blob)} bytes of header."
+            )
 
-        eol = blob.find(b'\n')
+        eol = blob.find(b"\n")
         if eol < 8:
-            raise ParseError('Impossibly short chunk header: "%s"' % eol)
+            raise ParseError(f'Impossibly short chunk header: "{eol}"')
         header = get_header(blob, eol)
 
-        if header.count(':') != 3:
-            raise ParseError('Incorrect number of fields in chunk header: '
-                             '"%s"' % header)
+        if header.count(":") != 3:
+            raise ParseError(f'Incorrect number of fields in chunk header: "{header}"')
 
-        add_sub, chunk_num, hash_len, read_len = header.split(':', 3)
+        add_sub, chunk_num, hash_len, read_len = header.split(":", 3)
 
         if len(add_sub) != 1:
-            raise ParseError('Chunk type is too long: "%s"' % header)
-        if add_sub not in ('a', 's'):
-            raise ParseError('Invalid chunk type: "%s"' % header)
+            raise ParseError(f'Chunk type is too long: "{header}"')
+        if add_sub not in ("a", "s"):
+            raise ParseError(f'Invalid chunk type: "{header}"')
 
         try:
             chunk_num = int(chunk_num)
             hash_len = int(hash_len)
             read_len = int(read_len)
         except ValueError:
-            raise ParseError('Non-integer chunk values: "%s"' % header)
+            raise ParseError(f'Non-integer chunk values: "{header}"')
 
         if read_len % hash_len != 0:
-            raise ParseError('Chunk data length not a multiple of prefix '
-                             'size: "%s"' % header)
+            raise ParseError(
+                f'Chunk data length not a multiple of prefix size: "{header}"'
+            )
 
-        blob = blob[eol + 1:]
+        blob = blob[eol + 1 :]
         blob += handle.read(read_len - len(blob))
-        if blob is None or len(blob) < read_len:
-            raise ParseError('Chunk data truncated for chunk %d' % chunk_num)
+        if len(blob) < read_len:
+            raise ParseError(f"Chunk data truncated for chunk {chunk_num}")
 
         hashes = []
         pos = 0
         while pos < read_len:
-            hashes.append(blob[pos:pos + hash_len])
+            hashes.append(blob[pos : pos + hash_len])
             pos += hash_len
 
-        parsed.insert_chunk(Chunk(chunk_type=add_sub, number=chunk_num,
-                                  hashes=hashes))
+        parsed.insert_chunk(Chunk(chunk_type=add_sub, number=chunk_num, hashes=hashes))
 
     return parsed
 
@@ -256,15 +259,14 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
     except ValueError as e:
         raise ParseError("Could not parse index file: %s" % e)
 
-    if 'name' not in index:
+    if "name" not in index:
         raise ParseError("Incorrectly formatted index: missing list name")
 
-    if 'chunks' not in index:
+    if "chunks" not in index:
         raise ParseError("Incorrectly formatted index: missing chunks")
 
-    if 'basedir' in index:
-        basedir = posixpath.join(os.path.dirname(handle.name),
-                                 index['basedir'])
+    if "basedir" in index:
+        basedir = posixpath.join(os.path.dirname(handle.name), index["basedir"])
     else:
         handle_name = handle.name
         if isinstance(handle_name, int):
@@ -273,28 +275,29 @@ def parse_dir_source(handle, exists_cb=os.path.exists, open_cb=open):
 
     parsed = ChunkList()
     int_key_chunks = {}
-    for key in index['chunks'].keys():
+    for key in index["chunks"].keys():
         # A little massaging to make the data structure a little cleaner
         try:
-            int_key_chunks[int(key)] = index['chunks'][key]
+            int_key_chunks[int(key)] = index["chunks"][key]
         except KeyError:
-            raise ParseError("Some weird behaviour with the list of chunks "
-                             "in \"%s\"" % handle.filename)
+            raise ParseError(
+                'Some weird behaviour with the list of chunks in "%s"' % handle.filename
+            )
         chunk_file = posixpath.join(basedir, str(key))
 
         if not exists_cb(chunk_file):
-            raise ParseError("Invalid chunk filename: \"%s\"" % chunk_file)
+            raise ParseError('Invalid chunk filename: "%s"' % chunk_file)
 
-        with open_cb(chunk_file, 'rb') as f:
+        with open_cb(chunk_file, "rb") as f:
             chunk_list = parse_file_source(f)
 
         # Only one chunk per file
         if len(chunk_list) > 1:
-            raise ParseError("More than one chunk in chunk file \"%s\""
-                             % chunk_file)
+            raise ParseError('More than one chunk in chunk file "%s"' % chunk_file)
 
-        for chunk in itertools.chain(iter(chunk_list.adds.values()),
-                                     iter(chunk_list.subs.values())):
+        for chunk in itertools.chain(
+            iter(chunk_list.adds.values()), iter(chunk_list.subs.values())
+        ):
             parsed.insert_chunk(chunk)
-    index['chunks'] = int_key_chunks
+    index["chunks"] = int_key_chunks
     return parsed

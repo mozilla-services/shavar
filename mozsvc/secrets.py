@@ -43,6 +43,7 @@ class Secrets(object):
     - **filename**: a list of file paths, or a single path.
 
     """
+
     def __init__(self, filename=None):
         self._secrets = defaultdict(list)
         if filename is not None:
@@ -56,9 +57,8 @@ class Secrets(object):
             filename = [filename]
 
         for name in filename:
-            with open(name, 'rb') as f:
-
-                reader = csv.reader(f, delimiter=',')
+            with open(name, "r") as f:
+                reader = csv.reader(f, delimiter=",")
                 for line, row in enumerate(reader):
                     if len(row) < 2:
                         continue
@@ -67,7 +67,7 @@ class Secrets(object):
                         raise ValueError("Duplicate node line %d" % line)
                     secrets = []
                     for secret in row[1:]:
-                        secret = secret.split(':')
+                        secret = secret.split(":")
                         if len(secret) != 2:
                             raise ValueError("Invalid secret line %d" % line)
                         secrets.append(tuple(secret))
@@ -75,11 +75,12 @@ class Secrets(object):
                     self._secrets[node] = secrets
 
     def save(self, filename):
-        with open(filename, 'wb') as f:
-            writer = csv.writer(f, delimiter=',')
+        with open(filename, "w") as f:
+            writer = csv.writer(f, delimiter=",")
             for node, secrets in list(self._secrets.items()):
-                secrets = ['%s:%s' % (timestamp, secret)
-                           for timestamp, secret in secrets]
+                secrets = [
+                    "%s:%s" % (timestamp, secret) for timestamp, secret in secrets
+                ]
                 secrets.insert(0, node)
                 writer.writerow(secrets)
 
@@ -88,7 +89,7 @@ class Secrets(object):
 
     def add(self, node, size=256):
         timestamp = str(int(time.time()))
-        secret = binascii.b2a_hex(os.urandom(size))[:size]
+        secret = binascii.b2a_hex(os.urandom(size))[:size].decode("ascii")
         # The new secret *must* sort at the end of the list.
         # This forbids you from adding multiple secrets per second.
         try:
@@ -111,6 +112,7 @@ class FixedSecrets(object):
     - **secrets**: a list of hex-encoded secrets to use for all nodes.
 
     """
+
     def __init__(self, secrets):
         if isinstance(secrets, str):
             secrets = secrets.split()
@@ -147,15 +149,20 @@ class DerivedSecrets(object):
     def get(self, node):
         hkdf_params = {
             "salt": None,
-            "info": self.HKDF_INFO_NODE_SECRET + node,
+            "info": self.HKDF_INFO_NODE_SECRET + node.encode("utf-8"),
             "hashmod": hashlib.sha256,
         }
         node_secrets = []
         for master_secret in self._master_secrets:
             # We want each hex-encoded derived secret to be the same
             # size as its (presumably hex-encoded) master secret.
-            size = len(master_secret) / 2
-            node_secret = HKDF(master_secret, size=size, **hkdf_params)
+            size = len(master_secret) // 2
+            secret_bytes = (
+                master_secret.encode("utf-8")
+                if isinstance(master_secret, str)
+                else master_secret
+            )
+            node_secret = HKDF(secret_bytes, size=size, **hkdf_params)
             node_secrets.append(binascii.b2a_hex(node_secret))
         return node_secrets
 
@@ -178,6 +185,7 @@ def manage(args):
         python -m mozsvc.secrets derive <master_secret> <node_name>
 
     """
+
     def report_usage_error():
         print("\n".join(manage.__doc__.split("\n")[1:]), file=sys.stderr)
         return 1
@@ -194,7 +202,7 @@ def manage(args):
             return report_usage_error()
         except IndexError:
             size = 32
-        print(os.urandom(size).encode('hex'))
+        print(os.urandom(size).hex())
         return 0
 
     if args[1] == "derive":

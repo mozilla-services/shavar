@@ -10,9 +10,8 @@ import time
 import socket
 import urllib.request, urllib.parse, urllib.error
 import logging
-import urllib.parse
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 
 from pyramid.util import DottedNameResolver
@@ -35,8 +34,8 @@ def round_time(value=None, precision=2):
     if not isinstance(value, str):
         value = str(value)
     try:
-        digits = '0' * precision
-        return Decimal(value).quantize(Decimal('1.' + digits))
+        digits = "0" * precision
+        return Decimal(value).quantize(Decimal("1." + digits))
     except InvalidOperation:
         raise ValueError(value)
 
@@ -79,25 +78,35 @@ def dnslookup(url):
     """
     try:
         from gevent.socket import _socket
+
         gethostbyname = _socket.gethostbyname
     except ImportError:
         import socket
+
         gethostbyname = socket.gethostbyname
 
     # parsing
     parsed_url = urllib.parse.urlparse(url)
-    host, port = urllib.parse.splitport(parsed_url.netloc)
-    user, host = urllib.parse.splituser(host)
+    # Use urlparse to extract user, host, port instead of deprecated splitport/splituser
+    host = parsed_url.hostname
+    port = str(parsed_url.port) if parsed_url.port is not None else None
+    # Preserve full user:password info if present
+    if parsed_url.username and parsed_url.password:
+        user = "%s:%s" % (parsed_url.username, parsed_url.password)
+    elif parsed_url.username:
+        user = parsed_url.username
+    else:
+        user = None
 
     # resolving the host
     host = gethostbyname(host)
 
     # recomposing
     if port is not None:
-        host = '%s:%s' % (host, port)
+        host = "%s:%s" % (host, port)
 
     if user is not None:
-        host = '%s@%s' % (user, host)
+        host = "%s@%s" % (user, host)
 
     parts = [parsed_url[0]] + [host] + list(parsed_url[2:])
     return urllib.parse.urlunparse(parts)
@@ -112,12 +121,31 @@ class JsonLogFormatter(logging.Formatter):
     log-record attributes.
     """
 
-    DEFAULT_LOGRECORD_ATTRS = set((
-        'args', 'asctime', 'created', 'exc_info', 'exc_text', 'filename',
-        'funcName', 'levelname', 'levelno', 'lineno', 'module', 'msecs',
-        'message', 'msg', 'name', 'pathname', 'process', 'processName',
-        'relativeCreated', 'thread', 'threadName'
-    ))
+    DEFAULT_LOGRECORD_ATTRS = set(
+        (
+            "args",
+            "asctime",
+            "created",
+            "exc_info",
+            "exc_text",
+            "filename",
+            "funcName",
+            "levelname",
+            "levelno",
+            "lineno",
+            "module",
+            "msecs",
+            "message",
+            "msg",
+            "name",
+            "pathname",
+            "process",
+            "processName",
+            "relativeCreated",
+            "thread",
+            "threadName",
+        )
+    )
 
     DEFAULT_DETAILS = {
         "v": 1,
@@ -127,12 +155,14 @@ class JsonLogFormatter(logging.Formatter):
     def format(self, record):
         # Take default values from the record and the environment.
         details = self.DEFAULT_DETAILS.copy()
-        details.update({
-            "op": record.name,
-            "name": record.name,
-            "time": datetime.utcfromtimestamp(record.created).isoformat()+"Z",
-            "pid": record.process,
-        })
+        details.update(
+            {
+                "op": record.name,
+                "name": record.name,
+                "time": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat().replace("+00:00", "Z"),
+                "pid": record.process,
+            }
+        )
         # Include any custom attributes set on the record.
         # These would usually be collected metrics data.
         for key, value in record.__dict__.items():

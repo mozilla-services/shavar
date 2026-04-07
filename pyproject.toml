@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shavar"
+version = "0.12.8.5"
+description = "shavar"
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+authors = [
+    {name = "Luke Crouch", email = "lcrouch@mozilla.com"},
+]
+keywords = ["web", "pyramid", "pylons"]
+classifiers = [
+    "Programming Language :: Python",
+    "Framework :: Pyramid",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+]
+dependencies = [
+    "boto3>=1.34",
+    "gunicorn>=22.0",
+    "konfig==1.1",
+    "packaging>=20.1",
+    "PasteScript>=3.2.0",
+    "pyramid>=2.0",
+    "pyramid_chameleon>=0.3",
+    "pyramid-debugtoolbar>=4.6.1",
+    "pyramid_mako>=1.1.0",
+    "sentry-sdk>=2.0,<3",
+    "setuptools<82",
+    "statsd>=3.3.0",
+    "swagger-parser>=1.0.1",
+    "waitress>=2.1.0",
+]
+
+[project.entry-points."paste.app_factory"]
+main = "shavar:main"
+
+[dependency-groups]
+dev = [
+    "cornice",
+    "hawkauthlib",
+    "pyramid-hawkauth",
+    "moto[s3]>=5.0",
+    "pytest>=8.0",
+    "responses>=0.25.0",
+    "ruff>=0.4.0",
+    "testfixtures",
+    "tokenlib",
+    "WebTest>=2.0.34",
+    "WSGIProxy2>=0.4.6",
+]
+
+[tool.setuptools.packages.find]
+include = ["shavar*", "mozsvc*"]
+
+[tool.pytest.ini_options]
+testpaths = ["shavar/tests", "mozsvc/tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning:pkg_resources",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+ignore = ["E241"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["shavar", "mozsvc"]
+
+[tool.ruff.format]
+quote-style = "double"

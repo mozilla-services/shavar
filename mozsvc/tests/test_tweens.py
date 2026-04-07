@@ -12,7 +12,6 @@ from mozsvc.tests.support import make_request
 
 
 class TestErrorHandlingTweens(unittest.TestCase):
-
     def setUp(self):
         self.app = None
         self.config = pyramid.testing.setUp()
@@ -66,7 +65,6 @@ class TestErrorHandlingTweens(unittest.TestCase):
 
 
 class TestBackoffResponseTween(unittest.TestCase):
-
     def setUp(self):
         self.app = None
         self.config = pyramid.testing.setUp()

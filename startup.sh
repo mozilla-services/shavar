@@ -1,7 +1,13 @@
 #!/bin/bash
 
 function start {
-     exec /usr/local/bin/uwsgi --ini-paste shavar.ini --paste-logger --uid 10001 --gid 10001
+    exec uv run gunicorn \
+        --paste shavar.ini \
+        --bind 0.0.0.0:8000 \
+        --workers 4 \
+        --threads 2 \
+        --access-logfile - \
+        --error-logfile -
 }
 
 if [ -n "$1" ]; then
@@ -12,13 +18,7 @@ fi
 
 case "$COMMAND" in
   START)
-    if [ -x /usr/local/bin/uwsgi ]; then
-      start
-      exit 0
-    else
-      echo "uwsgi is not installed"
-      exit 1
-    fi
+    start
     ;;
   SHELL)
     /bin/sh

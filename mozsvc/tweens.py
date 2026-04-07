@@ -5,7 +5,7 @@
 import sys
 import random
 import traceback
-import simplejson as json
+import json
 
 from pyramid.httpexceptions import HTTPException, HTTPServiceUnavailable
 
@@ -21,6 +21,7 @@ def catch_backend_errors(handler, registry):
     This is a pyramid tween factory for catching BackendError exceptions
     and translating them into a HTTP "503 Service Unavailable" response.
     """
+
     def catch_backend_errors_tween(request):
         try:
             return handler(request)
@@ -35,7 +36,7 @@ def catch_backend_errors(handler, registry):
             hash = create_hash(error_log)
             mozsvc.logger.error(hash)
             mozsvc.logger.error(error_log)
-            msg = json.dumps("application error: crash id %s" % hash)
+            msg = json.dumps("application error: crash id %s" % hash).encode("utf-8")
             if err.retry_after is not None:
                 if err.retry_after == 0:
                     retry_after = None
@@ -45,8 +46,9 @@ def catch_backend_errors(handler, registry):
                 settings = request.registry.settings
                 retry_after = settings.get("mozsvc.retry_after", 1800)
 
-            return HTTPServiceUnavailable(body=msg, retry_after=retry_after,
-                                          content_type="application/json")
+            return HTTPServiceUnavailable(
+                body=msg, retry_after=retry_after, content_type="application/json"
+            )
 
     return catch_backend_errors_tween
 
@@ -118,7 +120,6 @@ def send_backoff_responses(handler, registry):
     retry_after = settings.get("mozsvc.retry_after", 1800)
 
     if backoff_probability:
-
         backoff_probability = float(backoff_probability)
 
         def add_backoff_header(response):
@@ -142,14 +143,13 @@ def send_backoff_responses(handler, registry):
         handler = send_backoff_header_tween
 
     if unavailable_probability:
-
         unavailable_probability = float(unavailable_probability)
 
         def send_unavailable_response_tween(request, handler=handler):
             if random.random() < unavailable_probability:
-                return HTTPServiceUnavailable(body="0",
-                                              retry_after=retry_after,
-                                              content_type="application/json")
+                return HTTPServiceUnavailable(
+                    body=b"0", retry_after=retry_after, content_type="application/json"
+                )
             return handler(request)
 
         handler = send_unavailable_response_tween

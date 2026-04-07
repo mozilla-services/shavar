@@ -4,7 +4,7 @@
 
 import os
 import sys
-import unittest2
+import unittest as unittest2
 import urllib.parse
 
 from pyramid.request import Request
@@ -78,8 +78,7 @@ class TestCase(unittest2.TestCase):
                 self.ini_file = self.TEST_INI_FILE
             else:
                 # The file to use may be specified in the environment.
-                self.ini_file = os.environ.get("MOZSVC_TEST_INI_FILE",
-                                               "tests.ini")
+                self.ini_file = os.environ.get("MOZSVC_TEST_INI_FILE", "tests.ini")
         __file__ = sys.modules[self.__class__.__module__].__file__
         config = get_test_configurator(__file__, self.ini_file)
         config.begin()
@@ -121,10 +120,13 @@ class FunctionalTestCase(TestCase):
             self.config.commit()
 
         host_url = urllib.parse.urlparse(self.host_url)
-        self.app = TestApp(application, extra_environ={
-            "HTTP_HOST": host_url.netloc,
-            "wsgi.url_scheme": host_url.scheme or "http",
-            "SERVER_NAME": host_url.hostname,
-            "REMOTE_ADDR": "127.0.0.1",
-            "SCRIPT_NAME": host_url.path,
-        })
+        self.app = TestApp(
+            application,
+            extra_environ={
+                "HTTP_HOST": host_url.netloc,
+                "wsgi.url_scheme": host_url.scheme or "http",
+                "SERVER_NAME": host_url.hostname,
+                "REMOTE_ADDR": "127.0.0.1",
+                "SCRIPT_NAME": host_url.path,
+            },
+        )

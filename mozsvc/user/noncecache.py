@@ -29,9 +29,16 @@ class MemcachedNonceCache(object):
     under a key sha1(<timestamp>:<nonce>).
     """
 
-    def __init__(self, window=None, get_time=None, cache_server=None,
-                 cache_key_prefix="noncecache:", cache_pool_size=None,
-                 cache_pool_timeout=60, **kwds):
+    def __init__(
+        self,
+        window=None,
+        get_time=None,
+        cache_server=None,
+        cache_key_prefix="noncecache:",
+        cache_pool_size=None,
+        cache_pool_timeout=60,
+        **kwds,
+    ):
         # Memcached ttls are in integer seconds, so round up to the nearest.
         if window is None:
             window = DEFAULT_TIMESTAMP_WINDOW
@@ -39,8 +46,9 @@ class MemcachedNonceCache(object):
             window = int(math.ceil(window))
         self.window = window
         self.get_time = get_time or time.time
-        self.mcclient = MemcachedClient(cache_server, cache_key_prefix,
-                                        cache_pool_size, cache_pool_timeout)
+        self.mcclient = MemcachedClient(
+            cache_server, cache_key_prefix, cache_pool_size, cache_pool_timeout
+        )
 
     def __len__(self):
         raise NotImplementedError
@@ -65,7 +73,7 @@ class MemcachedNonceCache(object):
         # Check if it's in memcached, adding it if not.
         # Fortunately memcached 'add' has precisely the right semantics
         # of "create if not exists"
-        key = urlsafe_b64encode(sha1("%d:%s" % (timestamp, nonce)).digest())
+        key = urlsafe_b64encode(sha1(("%d:%s" % (timestamp, nonce)).encode("utf-8")).digest()).decode("ascii")
         try:
             if not self.mcclient.add(key, 1, time=self.window):
                 return False

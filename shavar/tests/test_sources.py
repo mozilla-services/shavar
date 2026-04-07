@@ -3,30 +3,25 @@ import posixpath
 import tempfile
 import time
 
-import boto
-from boto.s3.key import Key
-from moto import mock_s3_deprecated as mock_s3
+import boto3
+from moto import mock_aws
 
 from shavar.exceptions import NoDataError
-from shavar.sources import (
-    DirectorySource,
-    FileSource,
-    S3DirectorySource,
-    S3FileSource)
+from shavar.sources import DirectorySource, FileSource, S3DirectorySource, S3FileSource
 from shavar.types import ChunkList
 from shavar.tests.base import (
     DELTA_RESULT,
     ShavarTestCase,
     simple_adds,
     simple_subs,
-    test_file)
+    test_file,
+)
 
 
 class FileSourceTest(ShavarTestCase):
-
     def setUp(self):
         source = tempfile.NamedTemporaryFile(delete=False)
-        source.write(self.add + b'\n' + self.sub)
+        source.write(self.add + b"\n" + self.sub)
         source.flush()
         source.seek(0)
         self.source = source
@@ -39,8 +34,9 @@ class FileSourceTest(ShavarTestCase):
     def test_load(self):
         f = FileSource("file://" + self.source.name, 1)
         f.load()
-        self.assertEqual(f.chunks, ChunkList(add_chunks=simple_adds,
-                                             sub_chunks=simple_subs))
+        self.assertEqual(
+            f.chunks, ChunkList(add_chunks=simple_adds, sub_chunks=simple_subs)
+        )
 
     def test_refresh(self):
         # FIXME Timing issues causing intermittent failures.
@@ -48,7 +44,7 @@ class FileSourceTest(ShavarTestCase):
         f.load()
         self.assertFalse(f.refresh())
         self.source.seek(0)
-        self.source.write(self.add + b'\n' + self.sub)
+        self.source.write(self.add + b"\n" + self.sub)
         self.source.flush()
         self.source.seek(0)
         times = os.stat(self.source.name)
@@ -64,6 +60,7 @@ class FileSourceTest(ShavarTestCase):
         f = FileSource("file://tarantula", 1)
         self.assertRaises(NoDataError, f.load)
 
+
 #    def test_fetch(self):
 #        vals = {self.hm[:4]: [17], self.hg[:4]: [17]}
 #        f = FileSource("file://" + self.source.name)
@@ -72,7 +69,6 @@ class FileSourceTest(ShavarTestCase):
 
 
 class TestDirectorySource(ShavarTestCase):
-
     def test_load(self):
         path = test_file("delta_dir_source")
         d = DirectorySource("dir://{0}".format(path), 1)
@@ -93,90 +89,95 @@ class TestDirectorySource(ShavarTestCase):
 
 
 class TestS3FileSource(ShavarTestCase):
-
     # I have no idea where I came up with this name or what it might mean but
     # it's a keeper.
-    bucket_name = 'boost-a-nanny'
-    key_name = 'beebop/donkula'
+    bucket_name = "boost-a-nanny"
+    key_name = "beebop/donkula"
 
     def test_load(self):
-        with mock_s3():
-            conn = boto.connect_s3()
-            b = conn.create_bucket(self.bucket_name)
-            k = Key(b)
-            k.name = self.key_name
-            k.set_contents_from_string(self.add + b'\n' + self.sub)
+        with mock_aws():
+            s3 = boto3.client("s3", region_name="us-east-1")
+            s3.create_bucket(Bucket=self.bucket_name)
+            s3.put_object(
+                Bucket=self.bucket_name,
+                Key=self.key_name,
+                Body=self.add + b"\n" + self.sub,
+            )
 
-            f = S3FileSource("s3+file://{0}/{1}".format(self.bucket_name,
-                                                        self.key_name),
-                             0.5)
+            f = S3FileSource(
+                "s3+file://{0}/{1}".format(self.bucket_name, self.key_name), 0.5
+            )
             f.load()
-            self.assertEqual(f.chunks, ChunkList(add_chunks=simple_adds,
-                                                 sub_chunks=simple_subs))
+            self.assertEqual(
+                f.chunks, ChunkList(add_chunks=simple_adds, sub_chunks=simple_subs)
+            )
 
     def test_refresh(self):
-        with mock_s3():
-            conn = boto.connect_s3()
-            b = conn.create_bucket(self.bucket_name)
-            k = Key(b)
-            k.name = self.key_name
-            k.set_contents_from_string(self.add + b'\n' + self.sub)
+        with mock_aws():
+            s3 = boto3.client("s3", region_name="us-east-1")
+            s3.create_bucket(Bucket=self.bucket_name)
+            s3.put_object(
+                Bucket=self.bucket_name,
+                Key=self.key_name,
+                Body=self.add + b"\n" + self.sub,
+            )
 
-            f = S3FileSource("s3+file://{0}/{1}".format(self.bucket_name,
-                                                        self.key_name),
-                             0.5)
+            f = S3FileSource(
+                "s3+file://{0}/{1}".format(self.bucket_name, self.key_name), 0.5
+            )
             f.load()
-            # Change the content of the file to change the MD5 reported
-            k.set_contents_from_string("%s\n%s" % (self.sub, self.add))
+            # Change the content to change the ETag
+            s3.put_object(
+                Bucket=self.bucket_name,
+                Key=self.key_name,
+                Body=self.sub + b"\n" + self.add,
+            )
             self.assertTrue(f.needs_refresh())
 
     def test_no_data(self):
-        with mock_s3():
-            source_url = "s3+file://{0}/{1}".format(self.bucket_name,
-                                                    self.key_name)
+        with mock_aws():
+            source_url = "s3+file://{0}/{1}".format(self.bucket_name, self.key_name)
 
             # No bucket
             f = S3FileSource(source_url, 0.5)
-            with self.assertRaises(NoDataError) as ecm:
-                f.load()
-            self.assertEqual(str(ecm.exception),
-                             'Could not find bucket "{0}": S3ResponseError: '
-                             '404 Not Found\n'.format(self.bucket_name))
+            self.assertRaises(NoDataError, f.load)
 
             # Empty bucket
-            boto.connect_s3().create_bucket(self.bucket_name)
+            boto3.client("s3", region_name="us-east-1").create_bucket(
+                Bucket=self.bucket_name
+            )
             f = S3FileSource(source_url, 0.5)
             with self.assertRaises(NoDataError) as ecm:
                 f.load()
-            self.assertEqual(str(ecm.exception),
-                             'No chunk file found at "{0}"'
-                             .format(source_url))
+            self.assertEqual(
+                str(ecm.exception), 'No chunk file found at "%s"' % source_url
+            )
 
 
 class TestS3DirectorySource(ShavarTestCase):
-
-    bucket_name = 'pickle-farthing'
-    list_name = 'testpub-bananas-digest256'
+    bucket_name = "pickle-farthing"
+    list_name = "testpub-bananas-digest256"
 
     def test_load(self):
-        with mock_s3():
-            conn = boto.connect_s3()
-            b = conn.create_bucket(self.bucket_name)
-            for fname in ('index.json', '1', '2', '3', '4', '5', '6'):
-                k = Key(b)
-                k.name = posixpath.join(self.list_name, fname)
-                with open(test_file(posixpath.join('delta_dir_source', fname)),
-                          'rb') as f:
-                    k.set_contents_from_file(f)
+        with mock_aws():
+            s3 = boto3.client("s3", region_name="us-east-1")
+            s3.create_bucket(Bucket=self.bucket_name)
+            for fname in ("index.json", "1", "2", "3", "4", "5", "6"):
+                key = posixpath.join(self.list_name, fname)
+                with open(
+                    test_file(posixpath.join("delta_dir_source", fname)), "rb"
+                ) as f:
+                    s3.put_object(Bucket=self.bucket_name, Key=key, Body=f)
 
-            d = S3DirectorySource("s3+dir://{0}/{1}".format(self.bucket_name,
-                                                            self.list_name), 1)
+            d = S3DirectorySource(
+                "s3+dir://{0}/{1}".format(self.bucket_name, self.list_name), 1
+            )
             d.load()
             self.assertEqual(d.chunks, DELTA_RESULT)
 
     def test_no_data(self):
         source_url = "s3+dir://tarantula/bigandblue/"
-        index_url = posixpath.join(source_url, 'index.json')
+        index_url = posixpath.join(source_url, "index.json")
 
         index_body = """{
                             "name": "tarantula",
@@ -187,32 +188,35 @@ class TestS3DirectorySource(ShavarTestCase):
                             }
                         }"""
 
-        with mock_s3():
+        with mock_aws():
             # No bucket
             d = S3DirectorySource(source_url, 1)
             with self.assertRaises(NoDataError) as ecm:
                 d.load()
-            self.assertEqual(str(ecm.exception),
-                             'No such bucket "tarantula"')
+            self.assertEqual(str(ecm.exception), 'No such bucket "tarantula"')
 
             # Empty bucket
-            # save bucket object for use in index-no-data-file test below
-            b = boto.connect_s3().create_bucket("tarantula")
+            s3 = boto3.client("s3", region_name="us-east-1")
+            s3.create_bucket(Bucket="tarantula")
             d = S3DirectorySource(source_url, 1)
             with self.assertRaises(NoDataError) as ecm:
                 d.load()
-            self.assertEqual(str(ecm.exception),
-                             'No index file found at "{0}"'
-                             .format(index_url))
+            self.assertEqual(
+                str(ecm.exception),
+                'No index file found at "%s"'
+                % posixpath.join(source_url, "index.json"),
+            )
 
             # Index present but with missing data files
-            k = Key(b)
-            k.name = 'bigandblue/index.json'
-            k.set_contents_from_string(index_body)
+            s3.put_object(
+                Bucket="tarantula", Key="bigandblue/index.json", Body=index_body
+            )
             d = S3DirectorySource(source_url, 1)
             with self.assertRaises(NoDataError) as ecm:
                 d.load()
-            self.assertEqual(str(ecm.exception),
-                             'Parsing failure: Error parsing '
-                             '"/bigandblue/index.json": Invalid chunk '
-                             'filename: "1"')
+            self.assertEqual(
+                str(ecm.exception),
+                "Parsing failure: Error parsing "
+                '"/bigandblue/index.json": Invalid chunk '
+                'filename: "1"',
+            )

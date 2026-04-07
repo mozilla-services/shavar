@@ -4,15 +4,15 @@
 # file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 # ***** END LICENSE BLOCK *****
-""" Exceptions
-"""
+"""Exceptions"""
+
 from configparser import Error
 
 
 class BackendError(Exception):
     """Raised when the backend is down or fails"""
-    def __init__(self, msg='', server='', retry_after=None,
-                 backend=None, request=None):
+
+    def __init__(self, msg="", server="", retry_after=None, backend=None, request=None):
         """
         - msg, server will be dumped in str() if provided
         - retry_after, if set to a positive integer, will be used to send
@@ -31,51 +31,56 @@ class BackendError(Exception):
 
     def __str__(self):
         res = self.__class__.__name__
-        if self.server != '':
-            res += ' on %s' % self.server
+        if self.server != "":
+            res += " on %s" % self.server
         if self.backend is not None:
-            res += '\n%s' % str(self.backend)
-        if self.msg != '':
-            res += '\n\n%s' % self.msg
+            res += "\n%s" % str(self.backend)
+        if self.msg != "":
+            res += "\n\n%s" % self.msg
         if self.request:
-            res = '%s %s\n%s' % (self.request.method,
-                                 self.request.path_info,
-                                 res)
+            res = "%s %s\n%s" % (self.request.method, self.request.path_info, res)
         return res
 
 
 class BackendTimeoutError(BackendError):
     """Raised when the backend times out."""
+
     pass
 
 
 class MaxConnectionReachedError(Exception):
     """Raised by ldappool"""
+
     pass
 
 
 class NoEmailError(Exception):
     """Raised when we need the user's email address and it doesn't exist."""
+
     pass
 
 
 class NoUserIDError(Exception):
     """Raised when there's no userID fails."""
+
     pass
 
 
 class NodeAttributionError(Exception):
     """Raised when the node attribution fails."""
+
     pass
 
 
 class InvalidCodeError(Exception):
     """Raised when we need the user's reset code is incorrect."""
+
     pass
 
 
 class MethodNotFoundError(Error):
-    ''' Raised when a method lookup fails '''
+    """Raised when a method lookup fails"""
+
     pass
 
 
@@ -88,18 +93,18 @@ Warning
   which is used to generate http://docs.services.mozilla.com/respcodes.html
 """
 
-ERROR_ILLEGAL_METHOD = 1            # Illegal method/protocol
-ERROR_INVALID_CAPTCHA = 2           # Incorrect/missing captcha
-ERROR_INVALID_USER = 3              # Invalid/missing username
-ERROR_INVALID_WRITE = 4             # Attempt to overwrite data that can't be
-ERROR_WRONG_USERID = 5              # Userid does not match account in path
-ERROR_MALFORMED_JSON = 6            # Json parse failure
-ERROR_MISSING_PASSWORD = 7          # Missing password field
-ERROR_INVALID_OBJECT = 8            # Invalid Basic Object
-ERROR_WEAK_PASSWORD = 9             # Requested password not strong enough
-ERROR_INVALID_RESET_CODE = 10       # Invalid/missing password reset code
-ERROR_UNSUPPORTED_FUNCTION = 11     # Unsupported function
-ERROR_NO_EMAIL_ADDRESS = 12         # No email address on file
-ERROR_INVALID_COLLECTION = 13       # Invalid collection
-ERROR_OVER_QUOTA = 14               # User over quota
+ERROR_ILLEGAL_METHOD = 1  # Illegal method/protocol
+ERROR_INVALID_CAPTCHA = 2  # Incorrect/missing captcha
+ERROR_INVALID_USER = 3  # Invalid/missing username
+ERROR_INVALID_WRITE = 4  # Attempt to overwrite data that can't be
+ERROR_WRONG_USERID = 5  # Userid does not match account in path
+ERROR_MALFORMED_JSON = 6  # Json parse failure
+ERROR_MISSING_PASSWORD = 7  # Missing password field
+ERROR_INVALID_OBJECT = 8  # Invalid Basic Object
+ERROR_WEAK_PASSWORD = 9  # Requested password not strong enough
+ERROR_INVALID_RESET_CODE = 10  # Invalid/missing password reset code
+ERROR_UNSUPPORTED_FUNCTION = 11  # Unsupported function
+ERROR_NO_EMAIL_ADDRESS = 12  # No email address on file
+ERROR_INVALID_COLLECTION = 13  # Invalid collection
+ERROR_OVER_QUOTA = 14  # User over quota
 ERROR_USERNAME_EMAIL_MISMATCH = 15  # The e-mail does not match the username

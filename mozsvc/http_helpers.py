@@ -9,8 +9,16 @@ import base64
 from urllib.parse import urlparse, urlunparse
 
 
-def get_url(url, method='GET', data=None, user=None, password=None, timeout=5,
-            get_body=True, extra_headers=None):
+def get_url(
+    url,
+    method="GET",
+    data=None,
+    user=None,
+    password=None,
+    timeout=5,
+    get_body=True,
+    extra_headers=None,
+):
     """Performs a synchronous url call and returns the status and body.
 
     This function is to be used to provide a gateway service.
@@ -37,14 +45,15 @@ def get_url(url, method='GET', data=None, user=None, password=None, timeout=5,
         - tuple : status code, headers, body
     """
     if isinstance(password, str):
-        password = password.encode('utf-8')
+        password = password.encode("utf-8")
 
     req = urllib.request.Request(url, data=data)
     req.get_method = lambda: method
 
     if user is not None and password is not None:
-        auth = base64.encodestring('%s:%s' % (user, password))
-        req.add_header("Authorization", "Basic %s" % auth.strip())
+        credentials = ("%s:%s" % (user, password.decode("utf-8"))).encode("utf-8")
+        auth = base64.encodebytes(credentials).decode("utf-8").strip()
+        req.add_header("Authorization", "Basic %s" % auth)
 
     if extra_headers is not None:
         for name, value in list(extra_headers.items()):
@@ -53,15 +62,15 @@ def get_url(url, method='GET', data=None, user=None, password=None, timeout=5,
     try:
         res = urllib.request.urlopen(req, timeout=timeout)
     except urllib.error.HTTPError as e:
-        if hasattr(e, 'headers'):
+        if hasattr(e, "headers"):
             headers = dict(e.headers)
         else:
             headers = {}
 
-        if hasattr(e, 'read'):
+        if hasattr(e, "read"):
             body = e.read()
         else:
-            body = ''
+            body = ""
 
         return e.code, headers, body
 
@@ -73,7 +82,7 @@ def get_url(url, method='GET', data=None, user=None, password=None, timeout=5,
     if get_body:
         body = res.read()
     else:
-        body = ''
+        body = ""
 
     return res.getcode(), dict(res.headers), body
 
@@ -96,17 +105,20 @@ def proxy(request, scheme, netloc, timeout=5):
     # copying all X- headers
     xheaders = {}
     for header, value in list(request.headers.items()):
-        if not header.startswith('X-'):
+        if not header.startswith("X-"):
             continue
         xheaders[header] = value
 
-    if 'X-Forwarded-For' not in request.headers:
-        xheaders['X-Forwarded-For'] = request.remote_addr
+    if "X-Forwarded-For" not in request.headers:
+        xheaders["X-Forwarded-For"] = request.remote_addr
 
-    if hasattr(request, '_authorization'):
-        xheaders['Authorization'] = request._authorization
+    if hasattr(request, "_authorization"):
+        xheaders["Authorization"] = request._authorization
 
-    status, headers, body = get_url(url, method, data, timeout=timeout,
-                                    extra_headers=xheaders)
+    status, headers, body = get_url(
+        url, method, data, timeout=timeout, extra_headers=xheaders
+    )
 
+    if isinstance(body, str):
+        body = body.encode("utf-8")
     return Response(body, status, list(headers.items()))

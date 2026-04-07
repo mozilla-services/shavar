@@ -8,9 +8,9 @@ from sentry_sdk.integrations.pyramid import PyramidIntegration
 import shavar.lists
 
 
-__version__ = '0.12.8.5'
+__version__ = "0.12.8.5"
 DEFAULT_REFRESH_LISTS_DELAY = 600  # 10m
-logger = logging.getLogger('shavar')
+logger = logging.getLogger("shavar")
 
 
 class RefreshListsConfigThread(threading.Thread):
@@ -25,7 +25,7 @@ class RefreshListsConfigThread(threading.Thread):
 
 
 def refresh_lists_config(delay, config):
-    while(delay):
+    while delay:
         time.sleep(delay)
         logger.info("Refreshing lists config ...")
         shavar.lists.includeme(config)
@@ -36,7 +36,7 @@ def includeme(config):
     "Load shavar WSGI app into the provided Pyramid configurator"
     # Dependencies first
     config.include("mozsvc")
-    config.include('pyramid_mako')
+    config.include("pyramid_mako")
     # Have to get the lists loaded before the views
     shavar.lists.includeme(config)
     config.include("shavar.views")
@@ -44,6 +44,7 @@ def includeme(config):
 
 def get_configurator(global_config, **settings):
     import mozsvc.config
+
     config = mozsvc.config.get_configurator(global_config, **settings)
     config.begin()
     try:
@@ -54,31 +55,26 @@ def get_configurator(global_config, **settings):
 
 
 def configure_sentry(config):
-    dsn = config.registry.settings.get('shavar.sentry_dsn')
-    sentry_env = config.registry.settings.get('shavar.sentry_env')
+    dsn = config.registry.settings.get("shavar.sentry_dsn")
+    sentry_env = config.registry.settings.get("shavar.sentry_env")
     if dsn:
         env_option = {}
         if sentry_env:
             env_option = {"environment": sentry_env}
-        sentry_sdk.init(
-            dsn=dsn,
-            integrations=[PyramidIntegration()],
-            **env_option
-        )
+        sentry_sdk.init(dsn=dsn, integrations=[PyramidIntegration()], **env_option)
 
 
 def main(global_config, **settings):
-    """ This function returns a Pyramid WSGI application.
-    """
+    """This function returns a Pyramid WSGI application."""
 
     config = get_configurator(global_config, **settings)
     configure_sentry(config)
     app = config.make_wsgi_app()
     refreshListsConfigThread = RefreshListsConfigThread(
         config.registry.settings.get(
-            'shavar.refresh_lists_delay', DEFAULT_REFRESH_LISTS_DELAY
+            "shavar.refresh_lists_delay", DEFAULT_REFRESH_LISTS_DELAY
         ),
-        config
+        config,
     )
     refreshListsConfigThread.daemon = True
     refreshListsConfigThread.start()
