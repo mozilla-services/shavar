@@ -1,4 +1,5 @@
 import os
+
 # posixpath instead of os.path because posixpath will always use / as the path
 # separator.  Basically a Windows portability consideration.
 import posixpath
@@ -6,8 +7,8 @@ import tempfile
 import time
 from urllib.parse import urlparse
 
-from boto.exception import S3ResponseError
-from boto.s3.connection import S3Connection
+import boto3
+from botocore.exceptions import ClientError
 
 from shavar.exceptions import NoDataError, ParseError
 from shavar.parse import parse_dir_source, parse_file_source
@@ -27,7 +28,7 @@ class Source(object):
         self.last_check = 0
         # Initialize with an empty data set so we can always continue to serve
         self.chunks = ChunkList()
-        self.chunk_index = {'adds': set(()), 'subs': set(())}
+        self.chunk_index = {"adds": set(()), "subs": set(())}
         self.prefixes = None
         self.no_data = True
 
@@ -39,10 +40,12 @@ class Source(object):
             self.chunks = parser_func(fp, *args, **kwargs)
             self.last_check = int(time.time())
             self.last_refresh = int(time.time())
-            self.chunk_index = {'adds': set(self.chunks.adds.keys()),
-                                'subs': set(self.chunks.subs.keys())}
+            self.chunk_index = {
+                "adds": set(self.chunks.adds.keys()),
+                "subs": set(self.chunks.subs.keys()),
+            }
         except ParseError as e:
-            raise ParseError('Error parsing "%s": %s' % (self.url.path, e))
+            raise ParseError(f'Error parsing "{self.url.path}": {e}')
 
     def refresh(self):
         # Prevent constant refresh checks
@@ -59,16 +62,16 @@ class Source(object):
     def fetch(self, adds, subs):
         self.refresh()
 
-        chunks = {'adds': [], 'subs': []}
+        chunks = {"adds": [], "subs": []}
         for chunk_num in adds:
-            chunks['adds'].append(self.chunks.adds[chunk_num])
+            chunks["adds"].append(self.chunks.adds[chunk_num])
         for chunk_num in subs:
-            chunks['subs'].append(self.chunks.subs[chunk_num])
+            chunks["subs"].append(self.chunks.subs[chunk_num])
         return chunks
 
     def list_chunks(self):
         self.refresh()
-        return (self.chunk_index['adds'], self.chunk_index['subs'])
+        return (self.chunk_index["adds"], self.chunk_index["subs"])
 
     def find_prefix(self, prefix):
         return self.chunks.find_prefix(prefix)
@@ -82,14 +85,12 @@ class FileSource(Source):
     """
 
     def load(self):
-        if (not os.path.exists(self.url.path)
-                or os.stat(self.url.path).st_size <= 2):
+        if not os.path.exists(self.url.path) or os.stat(self.url.path).st_size <= 2:
             # We can't find the data for that list
             self.no_data = True
-            raise NoDataError('Known list, no data found: "%s"'
-                              % self.url.path)
+            raise NoDataError(f'Known list, no data found: "{self.url.path}"')
 
-        with open(self.url.path, 'rb') as f:
+        with open(self.url.path, "rb") as f:
             self._populate_chunks(f, parse_file_source)
         self.no_data = False
 
@@ -106,16 +107,18 @@ class DirectorySource(FileSource):
     JSON formatted index file.
     """
 
-    index_name = 'index.json'
+    index_name = "index.json"
 
     def __init__(self, source_url, refresh_interval):
-        if (source_url[-1] == '/'
-                or source_url[-len(self.index_name):] != self.index_name):
+        if (
+            source_url[-1] == "/"
+            or source_url[-len(self.index_name) :] != self.index_name
+        ):
             source_url = posixpath.join(source_url, self.index_name)
 
         # Relative path to a directory, tweak slightly so urlparse will parse
         # it correctly
-        if (source_url[6] != '/'):
+        if source_url[6] != "/":
             source_url = source_url[6:]
 
         super(DirectorySource, self).__init__(source_url, refresh_interval)
@@ -123,10 +126,11 @@ class DirectorySource(FileSource):
     def load(self):
         if not os.path.exists(self.url.path):
             self.no_data = True
-            raise NoDataError('Known list, no directory index found: "%s"'
-                              % self.url.path)
+            raise NoDataError(
+                f'Known list, no directory index found: "{self.url.path}"'
+            )
 
-        with open(self.url.path, 'r') as f:
+        with open(self.url.path, "r") as f:
             self._populate_chunks(f, parse_dir_source)
         self.no_data = False
 
@@ -140,91 +144,103 @@ class S3FileSource(Source):
         super(S3FileSource, self).__init__(source_url, refresh_interval)
         self.current_etag = None
         # eliminate preceding slashes in the S3 key name
-        elems = list(posixpath.split(posixpath.normpath(self.url.path)))
-        while '/' == elems[0]:
-            elems.pop(0)
-        self.key_name = posixpath.join(*elems)
+        self.key_name = self.url.path.lstrip("/")
 
-    def _get_key(self):
+    def _s3(self):
+        return boto3.client("s3")
+
+    def _head_object(self, s3=None):
+        if s3 is None:
+            s3 = self._s3()
         try:
-            conn = S3Connection()
-            bucket = conn.get_bucket(self.url.netloc)
-        except S3ResponseError as e:
-            raise NoDataError("Could not find bucket \"%s\": %s"
-                              % (self.url.netloc, e))
-        return bucket.get_key(self.key_name)
+            return s3.head_object(Bucket=self.url.netloc, Key=self.key_name)
+        except ClientError as e:
+            code = e.response["Error"]["Code"]
+            if code in ("404", "NoSuchKey", "NoSuchBucket"):
+                return None
+            raise NoDataError(f'Could not access "{self.source_url}": {e}')
 
     def load(self):
-        s3key = self._get_key()
-        if not s3key:
+        s3 = self._s3()
+
+        try:
+            s3.head_bucket(Bucket=self.url.netloc)
+        except ClientError as e:
+            code = e.response["Error"]["Code"]
+            if code in ("404", "NoSuchBucket"):
+                self.no_data = True
+                raise NoDataError(f'No chunk file found at "{self.source_url}"')
+            raise NoDataError(f'Could not find bucket "{self.url.netloc}": {e}')
+
+        meta = self._head_object(s3)
+        if meta is None:
             self.no_data = True
-            raise NoDataError('No chunk file found at "%s"' % self.source_url)
+            raise NoDataError(f'No chunk file found at "{self.source_url}"')
 
         with tempfile.TemporaryFile() as fp:
-            s3key.get_contents_to_file(fp)
-            # Need to forcibly reset to the beginning of the file
+            s3.download_fileobj(self.url.netloc, self.key_name, fp)
             fp.seek(0)
             self._populate_chunks(fp, parse_file_source)
-            self.current_etag = s3key.etag
+            self.current_etag = meta["ETag"]
         self.no_data = False
 
     def needs_refresh(self):
-        s3key = self._get_key()
-        if s3key.etag == self.current_etag:
+        meta = self._head_object()
+        if meta is None:
             return False
-        return True
+        return meta["ETag"] != self.current_etag
 
 
 class S3DirectorySource(S3FileSource):
-
-    index_name = 'index.json'
+    index_name = "index.json"
 
     def __init__(self, source_url, refresh_interval):
-        if (source_url[-1] == '/'
-                or source_url[-len(self.index_name):] != self.index_name):
+        if (
+            source_url[-1] == "/"
+            or source_url[-len(self.index_name) :] != self.index_name
+        ):
             source_url = posixpath.join(source_url, self.index_name)
-        super(S3DirectorySource, self).__init__(source_url,
-                                                refresh_interval)
+        super(S3DirectorySource, self).__init__(source_url, refresh_interval)
 
     def load(self):
-        # for the closures to minimize the number of connections to S3
-        conn = S3Connection()
+        s3 = self._s3()
 
         try:
-            bucket = conn.get_bucket(self.url.netloc)
-        except S3ResponseError as e:
-            if e.status == 404:
-                raise NoDataError("No such bucket \"{0}\""
-                                  .format(self.url.netloc))
+            s3.head_bucket(Bucket=self.url.netloc)
+        except ClientError as e:
+            code = e.response["Error"]["Code"]
+            if code in ("404", "NoSuchBucket"):
+                raise NoDataError(f'No such bucket "{self.url.netloc}"')
+            raise
 
         def s3exists(path):
-            # Construct the path to the key
-            key = posixpath.join(posixpath.dirname(self.url.path), path)
-            return bucket.get_key(key)
+            key = posixpath.join(posixpath.dirname(self.url.path), path).lstrip("/")
+            try:
+                s3.head_object(Bucket=self.url.netloc, Key=key)
+                return True
+            except ClientError:
+                return False
 
         def s3open(path, mode):
-            key = s3exists(path)
+            key = posixpath.join(posixpath.dirname(self.url.path), path).lstrip("/")
             fp = tempfile.TemporaryFile()
-            key.get_contents_to_file(fp)
+            s3.download_fileobj(self.url.netloc, key, fp)
             fp.seek(0)
             return fp
 
-        s3key = self._get_key()
-
-        if not s3key:
+        meta = self._head_object(s3)
+        if not meta:
             self.no_data = True
-            raise NoDataError('No index file found at "%s"'
-                              % posixpath.join(self.source_url))
+            raise NoDataError(f'No index file found at "{self.source_url}"')
 
         with tempfile.TemporaryFile() as fp:
-            s3key.get_contents_to_file(fp)
+            s3.download_fileobj(self.url.netloc, self.key_name, fp)
             fp.seek(0)
             try:
-                self._populate_chunks(fp, parse_dir_source,
-                                      exists_cb=s3exists,
-                                      open_cb=s3open)
+                self._populate_chunks(
+                    fp, parse_dir_source, exists_cb=s3exists, open_cb=s3open
+                )
             except ParseError as e:
-                raise NoDataError("Parsing failure: {0}".format(str(e)))
-
-            self.current_etag = s3key.etag
+                raise NoDataError(f"Parsing failure: {e}")
+            self.current_etag = meta["ETag"]
         self.no_data = False

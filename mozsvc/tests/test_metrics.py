@@ -1,6 +1,5 @@
-
 import time
-import unittest2
+import unittest
 
 from pyramid.request import Request, Response
 from pyramid.httpexceptions import HTTPNotFound, HTTPForbidden
@@ -15,8 +14,7 @@ from cornice import Service
 from cornice.pyramidhook import register_service_views
 
 
-class TestMetrics(unittest2.TestCase):
-
+class TestMetrics(unittest.TestCase):
     def setUp(self):
         self.logs = LogCapture()
 
@@ -38,7 +36,7 @@ class TestMetrics(unittest2.TestCase):
             register_service_views(config, stub_service)
             app = TestApp(config.make_wsgi_app())
             res = app.get("/stub")
-            self.assertEqual(res.body, "{}")
+            self.assertEqual(res.body, b"{}")
 
         self.assertTrue(len(self.logs.records), 1)
         r = self.logs.records[0]

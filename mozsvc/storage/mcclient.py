@@ -16,6 +16,7 @@ import warnings
 import traceback
 import contextlib
 import queue
+
 try:
     import simplejson as json
 except ImportError:
@@ -45,12 +46,21 @@ class MemcachedClient(object):
 
     """
 
-    def __init__(self, server=None, key_prefix="", pool_size=None,
-                 pool_timeout=60, max_key_size=None, max_value_size=None,
-                 **kwds):
+    def __init__(
+        self,
+        server=None,
+        key_prefix="",
+        pool_size=None,
+        pool_timeout=60,
+        max_key_size=None,
+        max_value_size=None,
+        **kwds,
+    ):
         if "servers" in kwds:
-            msg = "MemcachedClient supports only a single server; please "\
-                  "use the 'server' argument rather than 'servers'"
+            msg = (
+                "MemcachedClient supports only a single server; please "
+                "use the 'server' argument rather than 'servers'"
+            )
             warnings.warn(msg, DeprecationWarning, stacklevel=1)
             if server is None:
                 server = kwds.pop("servers")
@@ -102,7 +112,7 @@ class MemcachedClient(object):
         subclasses are free to override or extend this functionality.
         """
         assert key.startswith(self.key_prefix)
-        return key[len(self.key_prefix):]
+        return key[len(self.key_prefix) :]
 
     def _encode_value(self, value):
         """Encode an app-level value into the form for final storage.
@@ -282,7 +292,7 @@ class MCClientPool(object):
         are no objects left in the pool
         """
         # If there's no maxsize, no need to block waiting for a connection.
-        blocking = (self.maxsize is not None)
+        blocking = self.maxsize is not None
         # Loop until we get a non-stale connection, or we create a new one.
         while True:
             try:

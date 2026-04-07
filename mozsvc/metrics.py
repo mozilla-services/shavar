@@ -44,7 +44,7 @@ def initialize_request_metrics(request, defaults={}):
     request.metrics["method"] = request.method
     request.metrics["path"] = request.path_url
     request.metrics["agent"] = request.user_agent or ""
-    xff = request.headers.get('X-Forwarded-For', '')
+    xff = request.headers.get("X-Forwarded-For", "")
     xff = [ip for ip in COMMA_SEPARATED.split(xff) if ip]
     if request.remote_addr:
         xff.append(request.remote_addr)

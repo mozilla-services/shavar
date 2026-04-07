@@ -6,6 +6,7 @@
 # ***** END LICENSE BLOCK *****
 
 import logging
+
 logger = logging.getLogger("mozsvc")
 
 
@@ -21,7 +22,7 @@ def includeme(config):
     if config.registry.get("mozsvc.has_been_included"):
         return
     config.registry["mozsvc.has_been_included"] = True
-    config.add_route('heartbeat', '/__heartbeat__')
-    config.include('mozsvc.tweens')
-    config.include('mozsvc.metrics')
-    config.scan('mozsvc.views')
+    config.add_route("heartbeat", "/__heartbeat__")
+    config.include("mozsvc.tweens")
+    config.include("mozsvc.metrics")
+    config.scan("mozsvc.views")

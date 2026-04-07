@@ -1,16 +1,14 @@
-
 import os
 import json
 import logging
-import unittest2
+import unittest
 
 from testfixtures import LogCapture
 
 from mozsvc.util import JsonLogFormatter
 
 
-class TestJsonLogFormatter(unittest2.TestCase):
-
+class TestJsonLogFormatter(unittest.TestCase):
     def setUp(self):
         self.handler = LogCapture()
         self.formatter = JsonLogFormatter()
@@ -31,10 +29,14 @@ class TestJsonLogFormatter(unittest2.TestCase):
 
     def test_custom_paramters(self):
         logger = logging.getLogger("mozsvc.test.test_logging")
-        logger.warn("custom test %s", "one", extra={
-            "more": "stuff",
-            "op": "mytest",
-        })
+        logger.warning(
+            "custom test %s",
+            "one",
+            extra={
+                "more": "stuff",
+                "op": "mytest",
+            },
+        )
         self.assertEqual(len(self.handler.records), 1)
         details = json.loads(self.formatter.format(self.handler.records[0]))
         self.assertEqual(details["message"], "custom test one")
@@ -50,7 +52,6 @@ class TestJsonLogFormatter(unittest2.TestCase):
         self.assertEqual(len(self.handler.records), 1)
         details = json.loads(self.formatter.format(self.handler.records[0]))
         self.assertEqual(details["message"], "there was an error")
-        self.assertEqual(details["error"], "ValueError('\\n',)")
+        self.assertEqual(details["error"], "ValueError('\\n')")
         tblines = details["traceback"].strip().split("\n")
         self.assertEqual(tblines[-1], details["error"])
-        self.assertEqual(tblines[-2], "<type 'exceptions.ValueError'>")

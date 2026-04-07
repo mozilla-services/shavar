@@ -21,8 +21,8 @@ def configure_stats(config, _client=None):
         return set_stats_client(_client)
 
     if not config:
-        config = 'localhost:8125'
-    parts = config.split(':')
+        config = "localhost:8125"
+    parts = config.split(":")
     host = parts[0]
     port = 8125
     if len(parts) > 1:
@@ -33,9 +33,7 @@ def configure_stats(config, _client=None):
 
 
 class DebugStatsClient(StatsClient):
-
-    def __init__(self, host='localhost', port=8125, prefix=None,
-                 maxudpsize=512):
+    def __init__(self, host="localhost", port=8125, prefix=None, maxudpsize=512):
         self._host = host
         self._port = port
         self._addr = None

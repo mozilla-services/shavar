@@ -9,17 +9,29 @@ from mozsvc.tests.support import TestCase
 from shavar.types import Chunk, ChunkList
 
 
-hashes = {'moz': hashlib.sha256('https://www.mozilla.org/'.encode()).digest(),
-          'goog': hashlib.sha256('https://www.google.com/'.encode()).digest(),
-          'hub': hashlib.sha256('https://github.com/'.encode()).digest(),
-          'py': hashlib.sha256('http://www.python.org/'.encode()).digest()}
+hashes = {
+    "moz": hashlib.sha256("https://www.mozilla.org/".encode()).digest(),
+    "goog": hashlib.sha256("https://www.google.com/".encode()).digest(),
+    "hub": hashlib.sha256("https://github.com/".encode()).digest(),
+    "py": hashlib.sha256("http://www.python.org/".encode()).digest(),
+}
 
-simple_adds = [Chunk(chunk_type='a', number=17, hashes=set([hashes['goog'],
-                                                            hashes['moz']]),
-                     hash_size=32)]
-simple_subs = [Chunk(chunk_type='s', number=18, hashes=set([hashes['goog'],
-                                                            hashes['moz']]),
-                     hash_size=32)]
+simple_adds = [
+    Chunk(
+        chunk_type="a",
+        number=17,
+        hashes=set([hashes["goog"], hashes["moz"]]),
+        hash_size=32,
+    )
+]
+simple_subs = [
+    Chunk(
+        chunk_type="s",
+        number=18,
+        hashes=set([hashes["goog"], hashes["moz"]]),
+        hash_size=32,
+    )
+]
 
 conf_tmpl = """
 [shavar]
@@ -55,16 +67,13 @@ class DummyRequest(testing.DummyRequest):
 
     @property
     def body_file(self):
-        if not hasattr(self, '_buffered'):
+        if not hasattr(self, "_buffered"):
             self._buffered = io.BufferedReader(io.BytesIO(self.body))
         return self._buffered
 
 
 def dummy(body, path="/downloads", **kwargs):
-    params = {"apikey": "testing",
-              "client": "api",
-              "appver": "0.0",
-              "pver":   "2.0"}
+    params = {"apikey": "testing", "client": "api", "appver": "0.0", "pver": "2.0"}
     if kwargs:
         params.update(kwargs)
     body_in_bytes = body.encode() if isinstance(body, str) else body
@@ -80,10 +89,9 @@ test_file.__test__ = False
 
 
 class ShavarTestCase(TestCase):
-
-    hm = hashes['moz']
-    hg = hashes['goog']
-    _d = b''.join([hm, hg])
+    hm = hashes["moz"]
+    hg = hashes["goog"]
+    _d = b"".join([hm, hg])
     add = b"a:17:32:%d\n%s" % (len(_d), _d)
     sub = b"s:18:32:%d\n%s" % (len(_d), _d)
 
@@ -98,21 +106,22 @@ class ShavarTestCase(TestCase):
 
 
 def chunkit(n, typ, *urls):
-    return Chunk(number=n, chunk_type=typ,
-                 hashes=[hashlib.sha256(u.encode()).digest() for u in urls])
+    return Chunk(
+        number=n,
+        chunk_type=typ,
+        hashes=[hashlib.sha256(u.encode()).digest() for u in urls],
+    )
 
 
-DELTA_RESULT = ChunkList(add_chunks=[chunkit(1, 'a',
-                                             'https://www.mozilla.org/',
-                                             'https://www.google.com/'),
-                                     chunkit(2, 'a', 'https://github.com/',
-                                             'http://www.python.org/'),
-                                     chunkit(4, 'a',
-                                             'http://www.haskell.org/',
-                                             'https://www.mozilla.com/'),
-                                     chunkit(5, 'a', 'http://www.erlang.org',
-                                             'http://golang.org/')],
-                         sub_chunks=[chunkit(3, 's',
-                                             'https://github.com/'),
-                                     chunkit(6, 's',
-                                             'http://golang.org')])
+DELTA_RESULT = ChunkList(
+    add_chunks=[
+        chunkit(1, "a", "https://www.mozilla.org/", "https://www.google.com/"),
+        chunkit(2, "a", "https://github.com/", "http://www.python.org/"),
+        chunkit(4, "a", "http://www.haskell.org/", "https://www.mozilla.com/"),
+        chunkit(5, "a", "http://www.erlang.org", "http://golang.org/"),
+    ],
+    sub_chunks=[
+        chunkit(3, "s", "https://github.com/"),
+        chunkit(6, "s", "http://golang.org"),
+    ],
+)

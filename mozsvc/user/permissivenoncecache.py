@@ -35,5 +35,5 @@ class PermissiveNonceCache(object):
         now = self.get_time()
         skew = now - timestamp
         if abs(skew) > self.log_window:
-            logger.warn("Large timestamp skew detected: %d", skew)
+            logger.warning("Large timestamp skew detected: %d", skew)
         return True

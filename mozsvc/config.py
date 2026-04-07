@@ -35,7 +35,7 @@ def load_into_settings(filename, settings):
     # Konfig keywords are added to every section when present, we have to
     # filter them out, otherwise plugin.load_from_config and
     # plugin.load_from_settings are unable to create instances.
-    konfig_keywords = ['extends', 'overrides']
+    konfig_keywords = ["extends", "overrides"]
 
     # Put values from the config file into the pyramid settings dict.
     for section in config.sections():
@@ -45,7 +45,7 @@ def load_into_settings(filename, settings):
                 settings[setting_prefix + "." + name] = value
 
     # Store a reference to the Config object itself for later retrieval.
-    settings['config'] = config
+    settings["config"] = config
     return config
 
 
@@ -60,7 +60,7 @@ def get_configurator(global_config, **settings):
     """
     # Populate a SettingsDict with settings from the deployment file.
     settings = SettingsDict(settings)
-    config_file = global_config.get('__file__')
+    config_file = global_config.get("__file__")
     if config_file is not None:
         load_into_settings(config_file, settings)
     # Update with default pyramid settings, and then insert for all to use.

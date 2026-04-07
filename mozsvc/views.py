@@ -10,9 +10,9 @@ from pyramid.exceptions import URLDecodeError
 from pyramid.httpexceptions import HTTPNotFound
 
 
-@view_config(route_name='heartbeat', renderer='string')
+@view_config(route_name="heartbeat", renderer="string")
 def hearbeat(request):
-    return 'OK'
+    return "OK"
 
 
 @view_config(context=URLDecodeError)

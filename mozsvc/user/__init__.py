@@ -10,7 +10,7 @@ Utilities for authentication via Mozilla's TokenServer auth system.
 
 """
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from pyramid.request import Request
 from pyramid.authorization import ACLAuthorizationPolicy
@@ -27,6 +27,7 @@ from mozsvc.util import resolve_name
 from mozsvc.user.permissivenoncecache import PermissiveNonceCache
 
 import logging
+
 logger = logging.getLogger("mozsvc.user")
 
 
@@ -72,6 +73,7 @@ class RequestWithUser(Request):
     user = property(_get_user, _set_user)
 
 
+@implementer(IAuthenticationPolicy)
 class TokenServerAuthenticationPolicy(HawkAuthenticationPolicy):
     """Pyramid authentication policy for use with Tokenserver auth tokens.
 
@@ -86,8 +88,6 @@ class TokenServerAuthenticationPolicy(HawkAuthenticationPolicy):
     two arguments are mutually exclusive.
     """
 
-    implements(IAuthenticationPolicy)
-
     def __init__(self, secrets=None, **kwds):
         if not secrets:
             # Using secret=None will cause tokenlib to use a randomly-generated
@@ -95,11 +95,13 @@ class TokenServerAuthenticationPolicy(HawkAuthenticationPolicy):
             # twiddle any configuration files, but probably not what anyone
             # wants to use long-term.
             secrets = None
-            msgs = ["WARNING: using a randomly-generated token secret.",
-                    "You probably want to set 'secret' or 'secrets_file' in "
-                    "the [hawkauth] section of your configuration"]
+            msgs = [
+                "WARNING: using a randomly-generated token secret.",
+                "You probably want to set 'secret' or 'secrets_file' in "
+                "the [hawkauth] section of your configuration",
+            ]
             for msg in msgs:
-                mozsvc.logger.warn(msg)
+                mozsvc.logger.warning(msg)
         elif isinstance(secrets, (str, list)):
             secrets = mozsvc.secrets.FixedSecrets(secrets)
         elif isinstance(secrets, dict):
@@ -128,8 +130,8 @@ class TokenServerAuthenticationPolicy(HawkAuthenticationPolicy):
             secrets["secrets"] = settings.pop("secret")
         for name in list(settings.keys()):
             if name.startswith(secrets_prefix):
-                secrets[name[len(secrets_prefix):]] = settings.pop(name)
-        kwds['secrets'] = secrets
+                secrets[name[len(secrets_prefix) :]] = settings.pop(name)
+        kwds["secrets"] = secrets
         return kwds
 
     def _check_signature(self, request, key):
@@ -146,7 +148,7 @@ class TokenServerAuthenticationPolicy(HawkAuthenticationPolicy):
         try:
             return supercls._check_signature(request, key)
         except HTTPUnauthorized:
-            logger.warn("Authentication Failed: invalid hawk signature")
+            logger.warning("Authentication Failed: invalid hawk signature")
             raise
 
     def decode_hawk_id(self, request, tokenid):
@@ -175,7 +177,7 @@ class TokenServerAuthenticationPolicy(HawkAuthenticationPolicy):
             except (ValueError, KeyError):
                 pass
         else:
-            logger.warn("Authentication Failed: invalid hawk id")
+            logger.warning("Authentication Failed: invalid hawk id")
             raise ValueError("invalid Hawk id")
         return userid, key
 

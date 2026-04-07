@@ -15,7 +15,6 @@ from mozsvc.tests.support import make_request
 
 
 class TestUtil(unittest.TestCase):
-
     def setUp(self):
         self.app = None
         self.config = pyramid.testing.setUp()
@@ -36,8 +35,8 @@ class TestUtil(unittest.TestCase):
     def test_heartbeat_view(self):
         r = self._do_request("/__heartbeat__")
         self.assertEqual(r.status_int, 200)
-        self.assertEqual(r.body, "OK")
+        self.assertEqual(r.body, b"OK")
 
     def test_non_utf8_url_path(self):
-        r = self._do_request("/test/\xFF/path")
+        r = self._do_request("/test/\xff/path")
         self.assertEqual(r.status_int, 404)

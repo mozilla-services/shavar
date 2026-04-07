@@ -2,10 +2,11 @@ import unittest
 from io import StringIO
 from textwrap import dedent
 
-from zope.interface import Interface, implements
+from zope.interface import Interface, implementer
 from zope.interface.verify import verifyObject
 
-from pyramid.config import Configurator, ConfigurationConflictError
+from pyramid.config import Configurator
+from pyramid.exceptions import ConfigurationConflictError
 
 from mozsvc.config import Config
 from mozsvc.plugin import load_and_register
@@ -13,49 +14,54 @@ from mozsvc.plugin import load_and_register
 
 class ITest1(Interface):
     """A test Interface."""
+
     pass
 
 
 class ITest2(Interface):
     """Another test Interface."""
+
     pass
 
 
+@implementer(ITest1)
 class Test1(object):
     """A concrete implementation of ITest1."""
-    implements(ITest1)
 
     def __init__(self, **kwds):
         self.kwds = kwds
 
 
+@implementer(ITest2)
 class Test2(object):
     """A concrete implementation of ITest2."""
-    implements(ITest2)
 
     def __init__(self, **kwds):
         self.kwds = kwds
 
 
+@implementer(ITest1, ITest2)
 class Test1And2(object):
     """A concrete implementation of both ITest1 and ITest2."""
-    implements(ITest1, ITest2)
 
     def __init__(self, **kwds):
         self.kwds = kwds
 
 
 class TestPluginLoading(unittest.TestCase):
-
     def test_loading_from_config(self):
-        config = Config(StringIO(dedent("""
+        config = Config(
+            StringIO(
+                dedent("""
         [test1]
         backend = mozsvc.tests.test_plugin.Test1
         arg1 = 1
         hello = world
         [test2]
         dontusethis =  seriously
-        """)))
+        """)
+            )
+        )
         settings = {"config": config}
         config = Configurator(settings=settings)
         plugin = load_and_register("test1", config)

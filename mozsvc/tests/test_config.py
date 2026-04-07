@@ -10,8 +10,7 @@ import tempfile
 import os
 from io import StringIO
 
-from mozsvc.config import (Config, SettingsDict, load_into_settings,
-                           get_configurator)
+from mozsvc.config import Config, SettingsDict, load_into_settings, get_configurator
 
 
 _FILE_ONE = """\
@@ -83,11 +82,10 @@ thing = ok
 
 
 class ConfigTestCase(unittest.TestCase):
-
     def setUp(self):
-        os.environ['__STUFF__'] = 'stuff'
+        os.environ["__STUFF__"] = "stuff"
         fp, filename = tempfile.mkstemp()
-        f = os.fdopen(fp, 'w')
+        f = os.fdopen(fp, "w")
         f.write(_FILE_TWO)
         f.close()
         self.file_one = StringIO(_FILE_ONE % filename)
@@ -95,36 +93,36 @@ class ConfigTestCase(unittest.TestCase):
         self.file_three = StringIO(_FILE_THREE)
 
         fp, filename = tempfile.mkstemp()
-        f = os.fdopen(fp, 'w')
+        f = os.fdopen(fp, "w")
         f.write(_FILE_FOUR)
         f.close()
         self.file_four = filename
 
     def tearDown(self):
-        if '__STUFF__' in os.environ:
-            del os.environ['__STUFF__']
+        if "__STUFF__" in os.environ:
+            del os.environ["__STUFF__"]
         os.remove(self.file_two)
 
     def test_reader(self):
         config = Config(self.file_one)
 
         # values conversion
-        self.assertEqual(config.get('one', 'foo'), 'bar')
-        self.assertEqual(config.get('one', 'num'), -12)
-        self.assertEqual(config.get('one', 'st'), 'o=k')
-        self.assertEqual(config.get('one', 'lines'), [1, 'two', 3])
-        self.assertEqual(config.get('one', 'env'), 'some stuff')
+        self.assertEqual(config.get("one", "foo"), "bar")
+        self.assertEqual(config.get("one", "num"), -12)
+        self.assertEqual(config.get("one", "st"), "o=k")
+        self.assertEqual(config.get("one", "lines"), [1, "two", 3])
+        self.assertEqual(config.get("one", "env"), "some stuff")
 
         # getting a map
         map = config.get_map()
-        self.assertEqual(map['one.foo'], 'bar')
+        self.assertEqual(map["one.foo"], "bar")
 
-        map = config.get_map('one')
-        self.assertEqual(map['foo'], 'bar')
+        map = config.get_map("one")
+        self.assertEqual(map["foo"], "bar")
 
         # extends
-        self.assertEqual(config.get('three', 'more'), 'stuff')
-        self.assertEqual(config.get('one', 'two'), 'a')
+        self.assertEqual(config.get("three", "more"), "stuff")
+        self.assertEqual(config.get("one", "two"), "a")
 
     def test_nofile(self):
         # if a user tries to use an inexistant file in extensions,
@@ -160,38 +158,43 @@ class ConfigTestCase(unittest.TestCase):
         self.assertEqual(settings["pyramid.testing"], "test")
 
     def test_settings_dict_copy(self):
-        settings = SettingsDict({
-            "a.one": 1,
-            "a.two": 2,
-            "b.three": 3,
-            "four": 4,
-        })
+        settings = SettingsDict(
+            {
+                "a.one": 1,
+                "a.two": 2,
+                "b.three": 3,
+                "four": 4,
+            }
+        )
         new_settings = settings.copy()
         self.assertEqual(settings, new_settings)
         self.assertTrue(isinstance(new_settings, SettingsDict))
 
     def test_settings_dict_getsection(self):
-        settings = SettingsDict({
-            "a.one": 1,
-            "a.two": 2,
-            "b.three": 3,
-            "four": 4,
-        })
+        settings = SettingsDict(
+            {
+                "a.one": 1,
+                "a.two": 2,
+                "b.three": 3,
+                "four": 4,
+            }
+        )
         self.assertEqual(settings.getsection("a"), {"one": 1, "two": 2})
         self.assertEqual(settings.getsection("b"), {"three": 3})
         self.assertEqual(settings.getsection("c"), {})
         self.assertEqual(settings.getsection(""), {"four": 4})
 
     def test_settings_dict_setdefaults(self):
-        settings = SettingsDict({
-            "a.one": 1,
-            "a.two": 2,
-            "b.three": 3,
-            "four": 4,
-        })
+        settings = SettingsDict(
+            {
+                "a.one": 1,
+                "a.two": 2,
+                "b.three": 3,
+                "four": 4,
+            }
+        )
         settings.setdefaults({"a.two": "TWO", "a.five": 5, "new": "key"})
-        self.assertEqual(settings.getsection("a"),
-                          {"one": 1, "two": 2, "five": 5})
+        self.assertEqual(settings.getsection("a"), {"one": 1, "two": 2, "five": 5})
         self.assertEqual(settings.getsection("b"), {"three": 3})
         self.assertEqual(settings.getsection("c"), {})
         self.assertEqual(settings.getsection(""), {"four": 4, "new": "key"})
@@ -199,7 +202,7 @@ class ConfigTestCase(unittest.TestCase):
     def test_location_interpolation(self):
         config = Config(self.file_one)
         # file_one is a StringIO, so it has no location.
-        self.assertEqual(config.get('one', 'location'), '${HERE}')
+        self.assertEqual(config.get("one", "location"), "${HERE}")
         # file_two is a real file, so it has a location.
         file_two_loc = os.path.dirname(self.file_two)
-        self.assertEqual(config.get('three', 'location'), file_two_loc)
+        self.assertEqual(config.get("three", "location"), file_two_loc)

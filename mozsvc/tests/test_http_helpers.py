@@ -11,7 +11,7 @@ from mozsvc.http_helpers import get_url, proxy
 
 class FakeResult(object):
     headers = {}
-    body = '{}'
+    body = "{}"
 
     def getcode(self):
         return 200
@@ -21,7 +21,6 @@ class FakeResult(object):
 
 
 class TestHttp(unittest.TestCase):
-
     def setUp(self):
         self.oldopen = urllib.request.urlopen
         urllib.request.urlopen = self._urlopen
@@ -31,25 +30,25 @@ class TestHttp(unittest.TestCase):
 
     def _urlopen(self, req, timeout=None):
         url = req.get_full_url()
-        if url == 'impossible url':
+        if url == "impossible url":
             raise ValueError()
-        if url == 'http://dwqkndwqpihqdw.com':
-            msg = 'Name or service not known'
+        if url == "http://dwqkndwqpihqdw.com":
+            msg = "Name or service not known"
             raise urllib.error.URLError(socket.gaierror(-2, msg))
 
-        if url in ('http://google.com', 'http://goodauth'):
+        if url in ("http://google.com", "http://goodauth"):
             return FakeResult()
-        if url == 'http://badauth':
-            raise urllib.error.HTTPError(url, 401, '', {}, None)
-        if url == 'http://timeout':
+        if url == "http://badauth":
+            raise urllib.error.HTTPError(url, 401, "", {}, None)
+        if url == "http://timeout":
             raise urllib.error.URLError(socket.timeout())
-        if url == 'http://error':
-            raise urllib.error.HTTPError(url, 500, 'Error', {}, None)
-        if url == 'http://newplace':
+        if url == "http://error":
+            raise urllib.error.HTTPError(url, 500, "Error", {}, None)
+        if url == "http://newplace":
             res = FakeResult()
-            res.body = url + ' ' + req.headers['Authorization']
+            res.body = url + " " + req.headers["Authorization"]
             return res
-        if url == 'http://xheaders':
+        if url == "http://xheaders":
             res = FakeResult()
             headers = list(req.headers.items())
             headers.sort()
@@ -61,57 +60,54 @@ class TestHttp(unittest.TestCase):
     def test_get_url(self):
 
         # malformed url
-        self.assertRaises(ValueError, get_url, 'impossible url')
+        self.assertRaises(ValueError, get_url, "impossible url")
 
         # unknown location
-        code, headers, body = get_url('http://dwqkndwqpihqdw.com',
-                                      get_body=False)
+        code, headers, body = get_url("http://dwqkndwqpihqdw.com", get_body=False)
         self.assertEqual(code, 502)
-        self.assertTrue('Name or service not known' in body)
+        self.assertTrue("Name or service not known" in body)
 
         # any page
-        code, headers, body = get_url('http://google.com', get_body=False)
+        code, headers, body = get_url("http://google.com", get_body=False)
         self.assertEqual(code, 200)
-        self.assertEqual(body, '')
+        self.assertEqual(body, "")
 
         # page with auth failure
-        code, headers, body = get_url('http://badauth',
-                                      user='tarek',
-                                      password='xxxx')
+        code, headers, body = get_url("http://badauth", user="tarek", password="xxxx")
         self.assertEqual(code, 401)
 
         # page with right auth
-        code, headers, body = get_url('http://goodauth',
-                                      user='tarek',
-                                      password='passat76')
+        code, headers, body = get_url(
+            "http://goodauth", user="tarek", password="passat76"
+        )
         self.assertEqual(code, 200)
-        self.assertEqual(body, '{}')
+        self.assertEqual(body, "{}")
 
         # page that times out
-        code, headers, body = get_url('http://timeout', timeout=0.1)
+        code, headers, body = get_url("http://timeout", timeout=0.1)
         self.assertEqual(code, 504)
 
         # page that fails
-        code, headers, body = get_url('http://error', get_body=False)
+        code, headers, body = get_url("http://error", get_body=False)
         self.assertEqual(code, 500)
 
     def test_proxy(self):
         class FakeRequest(object):
-            url = 'http://locahost'
-            method = 'GET'
-            body = 'xxx'
-            headers = {'Content-Length': 3, 'X-Me-This': 1,
-                       'X-Me-That': 2}
-            remote_addr = '192.168.1.1'
-            _authorization = 'Basic SomeToken'
+            url = "http://locahost"
+            method = "GET"
+            body = "xxx"
+            headers = {"Content-Length": 3, "X-Me-This": 1, "X-Me-That": 2}
+            remote_addr = "192.168.1.1"
+            _authorization = "Basic SomeToken"
 
         request = FakeRequest()
-        response = proxy(request, 'http', 'newplace')
+        response = proxy(request, "http", "newplace")
         self.assertEqual(response.content_length, 31)
-        self.assertEqual(response.body, 'http://newplace Basic SomeToken')
+        self.assertEqual(response.body, b"http://newplace Basic SomeToken")
 
         # we want to make sure that X- headers are proxied
         request = FakeRequest()
-        response = proxy(request, 'http', 'xheaders')
-        self.assertTrue("('X-me-that', 2), ('X-me-this', 1)" in response.body)
-        self.assertTrue("X-forwarded-for" in response.body)
+        response = proxy(request, "http", "xheaders")
+        body = response.body.decode("utf-8")
+        self.assertTrue("('X-me-that', 2), ('X-me-this', 1)" in body)
+        self.assertTrue("X-forwarded-for" in body)
